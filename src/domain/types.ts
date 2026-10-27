@@ -12,7 +12,8 @@ export const EXERCISE_CATEGORIES = [
 ] as const
 export type ExerciseCategory = (typeof EXERCISE_CATEGORIES)[number]
 
-export const MEASUREMENT_TYPES = ['weight_reps', 'bodyweight_reps', 'duration', 'distance'] as const
+// cardio: machines with time, distance, speed, incline and calories per set.
+export const MEASUREMENT_TYPES = ['weight_reps', 'bodyweight_reps', 'duration', 'distance', 'cardio'] as const
 export type MeasurementType = (typeof MEASUREMENT_TYPES)[number]
 
 export type SetKind = 'warmup' | 'working'
@@ -29,6 +30,10 @@ export interface SetValues {
   reps: number | null
   duration_s: number | null
   distance_m: number | null
+  /** Cardio machines only. */
+  speed_kmh?: number | null
+  incline_pct?: number | null
+  calories?: number | null
 }
 
 export interface CompletedSet extends SetValues {

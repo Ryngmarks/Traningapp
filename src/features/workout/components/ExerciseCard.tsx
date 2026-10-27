@@ -101,9 +101,9 @@ export function ExerciseCard({
       )}
 
       {ex.sets.length > 0 && (
-        <div className={cn(setGridClass(fields.length), 'mt-3 px-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-faint')} aria-hidden="true">
+        <div className={cn(setGridClass(fields.filter((f) => !f.secondary).length), 'mt-3 px-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-faint')} aria-hidden="true">
           <span className="text-center">Set</span>
-          {fields.map((f) => <span key={f.key} className="text-center">{f.label}</span>)}
+          {fields.filter((f) => !f.secondary).map((f) => <span key={f.key} className="text-center">{f.label}</span>)}
           <span />
         </div>
       )}

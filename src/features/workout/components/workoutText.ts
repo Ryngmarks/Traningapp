@@ -1,4 +1,4 @@
-import { formatDistance, formatDuration, formatRelativeDay } from '@/domain/format'
+import { formatCardio, formatDistance, formatDuration, formatRelativeDay } from '@/domain/format'
 import type { ProgressionSuggestion } from '@/domain/progression'
 import type { MeasurementType, SetValues } from '@/domain/types'
 import type { LastPerformanceRow, PerformedExercise } from '@/data/workout'
@@ -34,6 +34,8 @@ export function setsText(sets: readonly SetValues[], m: MeasurementType): string
       return list.map((s) => formatDuration(s.duration_s)).join(', ')
     case 'distance':
       return list.map((s) => formatDistance(s.distance_m)).join(', ')
+    case 'cardio':
+      return list.map(formatCardio).join(' / ')
     case 'bodyweight_reps':
     case 'weight_reps': {
       const groups: { kg: number | null; reps: (number | null)[] }[] = []

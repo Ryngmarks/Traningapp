@@ -261,7 +261,8 @@ function WorkoutSessionView({ initial, onEnding }: { initial: ActiveWorkout; onE
         pickedIds={new Set(exerciseIds)}
         onPick={(e) => {
           if (picker?.mode === 'swap') void session.swapExercise(picker.performedExerciseId, e.id)
-          else void session.addExercise(e.id)
+          // A cardio machine is usually one long set.
+          else void session.addExercise(e.id, e.measurement_type === 'cardio' ? { planned_sets: 1 } : undefined)
         }}
       />
 

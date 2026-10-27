@@ -434,6 +434,9 @@ export type Database = {
           completed_at: string | null
           created_at: string
           updated_at: string
+          speed_kmh: number | null
+          incline_pct: number | null
+          calories: number | null
         }
         Insert: {
           id?: string
@@ -448,6 +451,9 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           updated_at?: string
+          speed_kmh?: number | null
+          incline_pct?: number | null
+          calories?: number | null
         }
         Update: {
           id?: string
@@ -462,6 +468,9 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           updated_at?: string
+          speed_kmh?: number | null
+          incline_pct?: number | null
+          calories?: number | null
         }
         Relationships: [
           {
@@ -709,6 +718,7 @@ export type Database = {
         | "bodyweight_reps"
         | "duration"
         | "distance"
+        | "cardio"
       set_kind:
         | "warmup"
         | "working"

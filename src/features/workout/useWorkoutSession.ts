@@ -9,14 +9,16 @@ import {
 } from '@/data/workout'
 import { SyncQueue, type SyncStatus } from './syncQueue'
 
-export type SetPatch = Partial<Pick<PerformedSet, 'weight_kg' | 'reps' | 'duration_s' | 'distance_m' | 'kind'>>
+export type SetPatch = Partial<Pick<PerformedSet,
+  'weight_kg' | 'reps' | 'duration_s' | 'distance_m' | 'speed_kmh' | 'incline_pct' | 'calories' | 'kind'>>
 
 const UNSAVED: readonly SyncStatus[] = ['pending', 'saving', 'error']
 
 function toRow(s: PerformedSet): SetRow {
   return {
     id: s.id, performed_exercise_id: s.performed_exercise_id, position: s.position, kind: s.kind,
-    weight_kg: s.weight_kg, reps: s.reps, duration_s: s.duration_s, distance_m: s.distance_m, completed_at: s.completed_at,
+    weight_kg: s.weight_kg, reps: s.reps, duration_s: s.duration_s, distance_m: s.distance_m,
+    speed_kmh: s.speed_kmh, incline_pct: s.incline_pct, calories: s.calories, completed_at: s.completed_at,
   }
 }
 
@@ -176,8 +178,8 @@ export function useWorkoutSession(initial: ActiveWorkout) {
 
   const nextPosition = () => Math.max(-1, ...workoutRef.current.exercises.map((e) => e.position)) + 1
 
-  const addExercise = useCallback((exerciseId: string) => runStructural(async () => {
-    await addExerciseToWorkout(workout.id, exerciseId, nextPosition())
+  const addExercise = useCallback((exerciseId: string, plan?: { planned_sets?: number }) => runStructural(async () => {
+    await addExerciseToWorkout(workout.id, exerciseId, nextPosition(), plan)
   }), [runStructural, workout.id])
 
   const removeExercise = useCallback((performedExerciseId: string) => runStructural(async () => {

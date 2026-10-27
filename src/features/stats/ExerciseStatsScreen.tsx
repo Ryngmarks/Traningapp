@@ -70,10 +70,10 @@ function ExerciseStats({ history, measurement, category }: {
   if (reps && pb.bestSessionVolume) {
     bests.push({ label: 'Bästa volym', value: formatWeight(Math.round(pb.bestSessionVolume.volume)), sub: formatShortDate(pb.bestSessionVolume.date) })
   }
-  if (measurement === 'duration' && pb.longestDuration) {
+  if ((measurement === 'duration' || measurement === 'cardio') && pb.longestDuration) {
     bests.push({ label: 'Längsta tid', value: formatDuration(pb.longestDuration.seconds), sub: formatShortDate(pb.longestDuration.date) })
   }
-  if (measurement === 'distance' && pb.longestDistance) {
+  if ((measurement === 'distance' || measurement === 'cardio') && pb.longestDistance) {
     bests.push({ label: 'Längsta distans', value: formatDistance(pb.longestDistance.meters), sub: formatShortDate(pb.longestDistance.date) })
   }
 
@@ -86,7 +86,9 @@ function ExerciseStats({ history, measurement, category }: {
       values: { top: s.topWeightKg, e1rm: s.bestE1RM },
     }))
   const hasE1rm = strengthLine.some((p) => p.values.e1rm != null)
-  const timedKind = measurement === 'duration' || measurement === 'distance' ? measurement : null
+  const timedKind = measurement === 'duration' || measurement === 'distance' ? measurement
+    : measurement === 'cardio' ? (sessions.some((s) => s.sets.some((x) => x.distance_m != null)) ? 'distance' : 'duration')
+    : null
   const timedLine = timedKind
     ? [...sessions].reverse()
       .map((s) => ({ s, v: sessionBest(s, timedKind) }))

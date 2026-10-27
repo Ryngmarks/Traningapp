@@ -24,6 +24,8 @@ function seedExercises(root) {
       image_path: null, archived_at: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
     })
   }
+  // Mirrors migration 20261027000900_cardio_sets.sql.
+  for (const e of out) if (['treadmill', 'cross_trainer', 'exercise_bike'].includes(e.slug)) e.measurement_type = 'cardio'
   return out
 }
 
@@ -190,11 +192,11 @@ function addPerformedExercise(state, activityId, exerciseId, position, plan) {
   let pos = 0
   for (let i = 0; i < (plan.warmup_sets ?? 0); i++) {
     const p = prevOf('warmup', i)
-    state.sets.push({ id: randomUUID(), performed_exercise_id: pe.id, user_id: USER_ID, position: pos++, kind: 'warmup', weight_kg: p?.weight_kg ?? null, reps: p?.reps ?? null, duration_s: p?.duration_s ?? null, distance_m: p?.distance_m ?? null, completed_at: null, created_at: pe.created_at, updated_at: pe.created_at })
+    state.sets.push({ id: randomUUID(), performed_exercise_id: pe.id, user_id: USER_ID, position: pos++, kind: 'warmup', weight_kg: p?.weight_kg ?? null, reps: p?.reps ?? null, duration_s: p?.duration_s ?? null, distance_m: p?.distance_m ?? null, speed_kmh: p?.speed_kmh ?? null, incline_pct: p?.incline_pct ?? null, calories: p?.calories ?? null, completed_at: null, created_at: pe.created_at, updated_at: pe.created_at })
   }
   for (let i = 0; i < (plan.planned_sets ?? 3); i++) {
     const p = prevOf('working', i)
-    state.sets.push({ id: randomUUID(), performed_exercise_id: pe.id, user_id: USER_ID, position: pos++, kind: 'working', weight_kg: p?.weight_kg ?? null, reps: p?.reps ?? (['weight_reps', 'bodyweight_reps'].includes(ex.measurement_type) ? plan.rep_min ?? null : null), duration_s: p?.duration_s ?? plan.target_duration_s ?? null, distance_m: p?.distance_m ?? null, completed_at: null, created_at: pe.created_at, updated_at: pe.created_at })
+    state.sets.push({ id: randomUUID(), performed_exercise_id: pe.id, user_id: USER_ID, position: pos++, kind: 'working', weight_kg: p?.weight_kg ?? null, reps: p?.reps ?? (['weight_reps', 'bodyweight_reps'].includes(ex.measurement_type) ? plan.rep_min ?? null : null), duration_s: p?.duration_s ?? plan.target_duration_s ?? null, distance_m: p?.distance_m ?? null, speed_kmh: p?.speed_kmh ?? null, incline_pct: p?.incline_pct ?? null, calories: p?.calories ?? null, completed_at: null, created_at: pe.created_at, updated_at: pe.created_at })
   }
   return pe.id
 }
@@ -246,7 +248,7 @@ const rpc = {
       rows.push({
         exercise_id: id, activity_id: last.a.id, started_at: last.a.started_at, rep_min: last.p.rep_min, rep_max: last.p.rep_max,
         sets: state.sets.filter((s) => s.performed_exercise_id === last.p.id && s.completed_at).sort((x, y) => x.position - y.position)
-          .map(({ kind, weight_kg, reps, duration_s, distance_m }) => ({ kind, weight_kg, reps, duration_s, distance_m })),
+          .map(({ kind, weight_kg, reps, duration_s, distance_m, speed_kmh, incline_pct, calories }) => ({ kind, weight_kg, reps, duration_s, distance_m, speed_kmh, incline_pct, calories })),
       })
     }
     return { body: rows }

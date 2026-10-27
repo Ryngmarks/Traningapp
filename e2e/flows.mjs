@@ -89,7 +89,7 @@ export async function run({ browser, devices, BASE, root, newPage, shot, check, 
   // Sharing: friends' and starter templates are listed under Träningstips,
   // read-only, and can be copied into your own templates.
   await page.goto(`${BASE}/traning`)
-  check(await page.getByText('Träningstips').isVisible(), 'shared templates section is shown')
+  check(await page.getByText('Träningstips').waitFor({ timeout: 5000 }).then(() => true, () => false), 'shared templates section is shown')
   check(await page.getByText(/av Anna/).first().isVisible(), 'shared template shows its author')
   check(await page.getByRole('link', { name: 'Redigera Annas axelpass' }).count() === 0, "friend's template has no edit button")
   await shot(page, 'flow-8-train-shared')
@@ -99,6 +99,28 @@ export async function run({ browser, devices, BASE, root, newPage, shot, check, 
   await page.waitForTimeout(400)
   check(await page.getByText('Redigera mall').isVisible(), 'a copied template opens in the editor')
   check(state.templates.filter((t) => t.name === 'Annas axelpass' && t.user_id !== null).length === 2, 'copy is stored as own template')
+
+  // Cardio machine: time, km, km/h, incline and kcal on one set.
+  await page.goto(`${BASE}/traning`)
+  await page.getByRole('button', { name: 'Fritt pass' }).click()
+  await page.waitForURL('**/traning/pass')
+  await page.getByRole('button', { name: /Lägg till övning/ }).last().click()
+  await page.getByRole('dialog').getByRole('searchbox').or(page.getByRole('dialog').getByRole('textbox')).first().fill('Löpband')
+  await page.getByRole('dialog').getByRole('button', { name: /Löpband/ }).first().click()
+  const tread = page.locator('[aria-label="Löpband"]').first()
+  await tread.waitFor()
+  await tread.getByLabel('Tid i minuter, set 1').fill('30')
+  await tread.getByLabel('Distans i km, set 1').fill('5,2')
+  await tread.getByLabel('Hastighet, set 1').fill('10,5')
+  await tread.getByLabel('Lutning, set 1').fill('2')
+  await tread.getByLabel('Kalorier, set 1').fill('320')
+  await tread.getByRole('button', { name: 'Klarmarkera set 1' }).click()
+  await page.waitForTimeout(800)
+  const cardioSet = state.sets.find((x) => x.distance_m === 5200)
+  check(cardioSet && cardioSet.duration_s === 1800 && cardioSet.speed_kmh === 10.5 && cardioSet.incline_pct === 2 && cardioSet.calories === 320 && cardioSet.completed_at,
+    `treadmill set stores time, km, speed, incline and kcal (got ${JSON.stringify(cardioSet)})`)
+  check(state.sets.filter((x) => x.performed_exercise_id === cardioSet?.performed_exercise_id).length === 1, 'a cardio exercise starts with one set')
+  await shot(page, 'flow-10-treadmill')
 
   // Invite link: the new member chooses name and password.
   const invite = await context.newPage()

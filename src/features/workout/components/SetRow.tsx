@@ -5,7 +5,7 @@ import { Icon } from '@/ui/Icon'
 import type { SyncStatus } from '../syncQueue'
 import type { SetPatch } from '../useWorkoutSession'
 import { NumberField } from './NumberField'
-import { missingFields, type SetField, stepValue, type ValueKey } from './setFields'
+import { missingFields, type SetField, shownValue, stepValue, storedValue, type ValueKey } from './setFields'
 import { formatInputNumber } from './workoutText'
 
 const SHAKE: Keyframe[] = [
@@ -43,7 +43,9 @@ export function SetRow({ set, marker, name, fields, status, expanded, isNext, on
   const done = Boolean(set.completed_at)
   const inputs = useRef<Partial<Record<ValueKey, HTMLInputElement | null>>>({})
   const [flash, setFlash] = useState<ValueKey[]>([])
-  const grid = setGridClass(fields.length)
+  const primary = fields.filter((f) => !f.secondary)
+  const secondary = fields.filter((f) => f.secondary)
+  const grid = setGridClass(primary.length)
 
   useEffect(() => {
     if (flash.length === 0) return
@@ -77,12 +79,12 @@ export function SetRow({ set, marker, name, fields, status, expanded, isNext, on
           {marker}
         </button>
 
-        {fields.map((f) => (
+        {primary.map((f) => (
           <NumberField
             key={f.key}
             ref={(el) => { inputs.current[f.key] = el }}
-            value={set[f.key]}
-            onChange={(v) => onChange({ [f.key]: v })}
+            value={shownValue(set[f.key], f)}
+            onChange={(v) => onChange({ [f.key]: storedValue(v, f) })}
             integer={f.integer}
             max={f.max}
             label={`${f.name}, ${name}`}
@@ -113,13 +115,36 @@ export function SetRow({ set, marker, name, fields, status, expanded, isNext, on
         </div>
       </div>
 
+      {secondary.length > 0 && (
+        <div className="mt-1.5 grid grid-cols-[40px_repeat(3,minmax(0,1fr))_52px] items-end gap-2">
+          <span />
+          {secondary.map((f) => (
+            <label key={f.key} className="min-w-0">
+              <span className="mb-0.5 block text-center text-[10px] font-semibold uppercase tracking-[0.06em] text-faint">{f.label}</span>
+              <NumberField
+                ref={(el) => { inputs.current[f.key] = el }}
+                value={shownValue(set[f.key], f)}
+                onChange={(v) => onChange({ [f.key]: storedValue(v, f) })}
+                integer={f.integer}
+                max={f.max}
+                label={`${f.name}, ${name}`}
+                placeholder="–"
+                done={done}
+                size="sm"
+              />
+            </label>
+          ))}
+          <span />
+        </div>
+      )}
+
       {expanded && (
         <div className={cn(grid, 'mt-1.5 animate-fade-in')}>
           <button type="button" onClick={onRemove} aria-label={`Ta bort ${name}`}
             className="grid h-11 place-items-center rounded-xl text-faint transition-colors hover:text-danger active:text-danger">
             <Icon name="trash" size={18} />
           </button>
-          {fields.map((f) => (
+          {primary.map((f) => (
             <div key={f.key} className="flex gap-1">
               <StepButton label={`−${formatInputNumber(f.step)}`} aria={`Minska ${f.name.toLowerCase()} med ${formatInputNumber(f.step)}`}
                 onClick={() => onChange({ [f.key]: stepValue(set[f.key], f, -1) })} />

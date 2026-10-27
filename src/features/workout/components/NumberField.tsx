@@ -14,6 +14,8 @@ export interface NumberFieldProps {
   invalid?: boolean
   done?: boolean
   className?: string
+  /** sm: secondary cardio values. */
+  size?: 'md' | 'sm'
   ref?: Ref<HTMLInputElement>
 }
 
@@ -22,7 +24,7 @@ export interface NumberFieldProps {
  * focused (so "62," survives), commits every valid keystroke, selects all
  * on focus so a new value can be typed straight away.
  */
-export function NumberField({ value, onChange, integer, max, label, placeholder, invalid, done, className, ref }: NumberFieldProps) {
+export function NumberField({ value, onChange, integer, max, label, placeholder, invalid, done, className, size = 'md', ref }: NumberFieldProps) {
   const [draft, setDraft] = useState<string | null>(null)
   // Keep the typed text only while it still describes the value; a stepper
   // tap or a progression hint changes the value and must show through.
@@ -59,7 +61,9 @@ export function NumberField({ value, onChange, integer, max, label, placeholder,
       onBlur={() => setDraft(null)}
       onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
       className={cn(
-        'tabular h-12 w-full min-w-0 rounded-xl border bg-sunken px-1 text-center text-[18px] font-semibold text-fg transition-colors placeholder:font-medium placeholder:text-faint focus:border-accent/70 focus:outline-none',
+        'tabular w-full min-w-0 rounded-xl border bg-sunken px-1 text-center font-semibold',
+        size === 'sm' ? 'h-10 text-[15px]' : 'h-12 text-[18px]',
+        'text-fg transition-colors placeholder:font-medium placeholder:text-faint focus:border-accent/70 focus:outline-none',
         invalid ? 'border-danger/80 bg-danger-soft' : done ? 'border-transparent bg-black/20' : 'border-line',
         className,
       )}

@@ -90,7 +90,8 @@ export async function updatePerformedExercise(id: string, patch: { position?: nu
 
 /** Row the client sends for a set. The id is generated client side. */
 export type SetRow = Pick<PerformedSet,
-  'id' | 'performed_exercise_id' | 'position' | 'kind' | 'weight_kg' | 'reps' | 'duration_s' | 'distance_m' | 'completed_at'>
+  'id' | 'performed_exercise_id' | 'position' | 'kind' | 'weight_kg' | 'reps' | 'duration_s' | 'distance_m' |
+  'speed_kmh' | 'incline_pct' | 'calories' | 'completed_at'>
 
 /** Idempotent: retrying the same row can never create a duplicate set. */
 export async function upsertSet(row: SetRow): Promise<void> {
