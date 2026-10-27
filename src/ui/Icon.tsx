@@ -35,6 +35,8 @@ const paths = {
   cloudOff: <><path d="M4 4l16 16" /><path d="M8.5 8.6A5 5 0 0 0 7 18h10.5M19.5 16.5A3.5 3.5 0 0 0 17 11h-.2a5 5 0 0 0-6.2-3.7" /></>,
   search: <><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></>,
   info: <><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5M12 8h.01" /></>,
+  book: <><path d="M5 5.5A1.5 1.5 0 0 1 6.5 4H19v14H6.5A1.5 1.5 0 0 0 5 19.5z" /><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3" /></>,
+  archive: <><path d="M4 5h16v4H4z" /><path d="M5.5 9v10h13V9M10 13h4" /></>,
 } as const
 
 export type IconName = keyof typeof paths

@@ -10,3 +10,5 @@ playwright-report/
 test-results/
 supabase/.temp/
 supabase/.branches/
+dist-e2e/
+e2e/screenshots/
