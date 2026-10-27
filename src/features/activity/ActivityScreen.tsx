@@ -19,7 +19,7 @@ const FILTERS: readonly { value: ActivityFilter; label: string }[] = [
   { value: 'walk', label: 'Promenad' },
   { value: 'other', label: 'Övrigt' },
 ]
-const PAGE = 80
+const PAGE = 30
 
 export function ActivityScreen() {
   const { data, isPending, error, refetch } = useActivities()

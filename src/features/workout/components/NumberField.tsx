@@ -24,14 +24,18 @@ export interface NumberFieldProps {
  */
 export function NumberField({ value, onChange, integer, max, label, placeholder, invalid, done, className, ref }: NumberFieldProps) {
   const [draft, setDraft] = useState<string | null>(null)
-  const shown = draft ?? formatInputNumber(value)
+  // Keep the typed text only while it still describes the value; a stepper
+  // tap or a progression hint changes the value and must show through.
+  const shown = draft != null && draftMatches(draft, value, integer) ? draft : formatInputNumber(value)
 
   const onText = (text: string) => {
-    setDraft(text)
-    if (text.trim() === '') { onChange(null); return }
+    if (text.trim() === '') { setDraft(text); onChange(null); return }
     const n = parseNumberInput(text)
+    // Reject what cannot be a value (letters, negatives, too large): keep the old text.
     if (n == null || n < 0 || n > max) return
-    onChange(integer ? Math.round(n) : Math.round(n * 100) / 100)
+    setDraft(text)
+    const next = normalize(n, integer)
+    if (next !== value) onChange(next)
   }
 
   return (
@@ -61,4 +65,12 @@ export function NumberField({ value, onChange, integer, max, label, placeholder,
       )}
     />
   )
+}
+
+const normalize = (n: number, integer: boolean | undefined) => (integer ? Math.round(n) : Math.round(n * 100) / 100)
+
+function draftMatches(draft: string, value: number | null, integer: boolean | undefined): boolean {
+  if (draft.trim() === '') return value == null
+  const n = parseNumberInput(draft)
+  return n != null && value != null && normalize(n, integer) === value
 }

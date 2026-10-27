@@ -25,7 +25,7 @@ export function ActivityDetailScreen() {
 
   return (
     <Screen>
-      <SubHeader title={row ? activityTitle(row) : 'Aktivitet'}
+      <SubHeader title={row ? activityTitle(row) : 'Aktivitet'} back="/aktivitet"
         action={row && row.type !== 'gym' ? <EditButton id={row.id} /> : undefined} />
       {isPending ? (
         <div className="space-y-3"><Skeleton className="h-28 rounded-[var(--radius-card)]" /><Skeleton className="h-40 rounded-[var(--radius-card)]" /></div>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { suggestProgression } from '@/domain/progression'
+import type { SetKind } from '@/domain/types'
 import type { LastPerformanceRow, PerformedExercise, PerformedSet } from '@/data/workout'
 import { IconButton } from '@/ui/Button'
 import { cn } from '@/ui/cn'
@@ -19,7 +20,7 @@ export interface ExerciseCardProps {
   isCurrent: boolean
   onUpdateSet: (setId: string, patch: SetPatch) => void
   onToggleSet: (setId: string) => boolean
-  onAddSet: () => void
+  onAddSet: (kind: SetKind) => void
   onRemoveSet: (set: PerformedSet) => void
   onMore: () => void
 }
@@ -132,11 +133,25 @@ export function ExerciseCard({
         ))}
       </div>
 
-      <button type="button" onClick={onAddSet}
-        className="mt-1.5 flex h-11 w-full items-center justify-center gap-1.5 rounded-xl text-[14px] font-semibold text-muted transition-colors hover:bg-raised hover:text-fg active:bg-raised">
-        <Icon name="plus" size={18} />
-        Lägg till set
-      </button>
+      <div className="mt-1.5 flex gap-1.5">
+        <AddButton icon="plus" label="Set" aria="Lägg till set" onClick={() => onAddSet('working')} className="flex-1" />
+        <AddButton icon="flame" label="Uppvärmning" aria="Lägg till uppvärmningsset" onClick={() => onAddSet('warmup')} />
+      </div>
     </section>
+  )
+}
+
+function AddButton({ icon, label, aria, onClick, className }: {
+  icon: 'plus' | 'flame'; label: string; aria: string; onClick: () => void; className?: string
+}) {
+  return (
+    <button type="button" onClick={onClick} aria-label={aria}
+      className={cn(
+        'flex h-11 items-center justify-center gap-1.5 rounded-xl px-3.5 text-[14px] font-semibold text-muted transition-[transform,background-color,color] duration-150 hover:bg-raised hover:text-fg active:scale-[0.98] active:bg-raised',
+        className,
+      )}>
+      <Icon name={icon} size={17} />
+      {label}
+    </button>
   )
 }

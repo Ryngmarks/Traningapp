@@ -15,7 +15,7 @@ import { EmptyState, ErrorState, Skeleton } from '@/ui/States'
 import { useToast } from '@/ui/Toast'
 import { todayLocal, useNow } from '@/ui/useNow'
 import { durationToInput, parseDurationInput, zonedIso, zonedParts } from './helpers'
-import { useGoBack } from './useGoBack'
+import { useGoBack } from '@/ui/useGoBack'
 
 type FormType = Exclude<ActivityType, 'gym'>
 
@@ -47,10 +47,10 @@ export function ActivityFormScreen() {
     return <ActivityForm initialType={isFormType(typ) ? typ : 'run'} />
   }
   if (activities.isPending) {
-    return <Screen><SubHeader title="Redigera" /><div className="space-y-3"><Skeleton className="h-24" /><Skeleton className="h-48" /></div></Screen>
+    return <Screen><SubHeader title="Redigera" back="/aktivitet" /><div className="space-y-3"><Skeleton className="h-24" /><Skeleton className="h-48" /></div></Screen>
   }
   if (activities.error) {
-    return <Screen><SubHeader title="Redigera" /><ErrorState error={activities.error} onRetry={() => activities.refetch()} /></Screen>
+    return <Screen><SubHeader title="Redigera" back="/aktivitet" /><ErrorState error={activities.error} onRetry={() => activities.refetch()} /></Screen>
   }
   const row = activities.data.find((a) => a.id === id)
   if (!row) {
@@ -59,7 +59,7 @@ export function ActivityFormScreen() {
   if (row.type === 'gym') {
     return (
       <Screen>
-        <SubHeader title="Redigera" />
+        <SubHeader title="Redigera" back="/aktivitet" />
         <EmptyState icon="dumbbell" title="Gympass ändras i Träna" text="Gympass loggas set för set och redigeras inte här." />
       </Screen>
     )
@@ -170,7 +170,7 @@ function ActivityForm({ initial, initialType }: { initial?: ActivityRow; initial
 
   return (
     <Screen>
-      <SubHeader title={initial ? 'Redigera aktivitet' : 'Ny aktivitet'} />
+      <SubHeader title={initial ? 'Redigera aktivitet' : 'Ny aktivitet'} back="/aktivitet" />
       <form onSubmit={onSubmit} noValidate className="space-y-6">
         <section className="space-y-2.5">
           <ChipGroup label="Typ" value={type} onChange={changeType} options={TYPE_OPTIONS} />
