@@ -36,7 +36,7 @@ function MenuBody({ exercise, busy, onSwap, onRemove }: {
         title={confirm.armed ? 'Tryck igen för att ta bort' : 'Ta bort övning'}
         text={done > 0 ? `${done} klarmarkerade set tas också bort.` : 'Övningen och dess set tas bort från passet.'}
         busy={busy && confirm.armed}
-        onClick={() => { if (confirm.armed) { confirm.reset(); onRemove() } else confirm.arm() }}
+        onClick={() => { if (confirm.armed) onRemove(); else confirm.arm() }}
       />
     </div>
   )

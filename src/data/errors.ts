@@ -39,9 +39,9 @@ export function toDataError(e: unknown): DataError {
 }
 
 /** Unwrap a Supabase response, throwing a DataError on failure. */
-export function unwrap<T>(res: { data: T | null; error: unknown }): T {
+export function unwrap<T>(res: { data: T | null; error: unknown }): NonNullable<T> {
   if (res.error) throw toDataError(res.error)
-  return res.data as T
+  return res.data as NonNullable<T>
 }
 
 /** Like unwrap, for queries where "no row" is a valid answer (maybeSingle). */

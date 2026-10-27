@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { periodRange } from '@/domain/dates'
-import { bucketLabels, historicalSummary, periodTitle, shiftAnchor } from './helpers'
+import {
+  bucketLabels, firstActivityDate, historicalSummary, isLatestPeriod, parseAnchor, periodTitle, shiftAnchor, trainedExercises, typeRows,
+} from './helpers'
 
 describe('shiftAnchor', () => {
   it('moves by week, month and year', () => {
@@ -38,5 +40,37 @@ describe('historicalSummary', () => {
       { activity_type: 'football_match', session_count: 1 },
       { activity_type: 'run', session_count: 0 },
     ])).toBe('110 gympass och 1 match')
+  })
+})
+
+describe('period navigation', () => {
+  it('parses the anchor from the URL', () => {
+    expect(parseAnchor('2026-03-04', '2026-10-27')).toBe('2026-03-04')
+    expect(parseAnchor('2027-01-01', '2026-10-27')).toBe('2026-10-27')
+    expect(parseAnchor('nonsense', '2026-10-27')).toBe('2026-10-27')
+    expect(parseAnchor(null, '2026-10-27')).toBe('2026-10-27')
+  })
+  it('knows when the next period is in the future', () => {
+    expect(isLatestPeriod('week', '2026-10-27', '2026-10-27')).toBe(true)
+    expect(isLatestPeriod('week', '2026-10-20', '2026-10-27')).toBe(false)
+    expect(isLatestPeriod('month', '2026-10-01', '2026-10-27')).toBe(true)
+    expect(isLatestPeriod('month', '2026-09-30', '2026-10-27')).toBe(false)
+    expect(isLatestPeriod('year', '2025-06-01', '2026-10-27')).toBe(false)
+    expect(isLatestPeriod('year', '2026-01-01', '2026-10-27')).toBe(true)
+  })
+})
+
+describe('summary helpers', () => {
+  it('finds the first activity date', () => {
+    expect(firstActivityDate([])).toBeNull()
+    expect(firstActivityDate([{ local_date: '2026-05-01' }, { local_date: '2025-01-02' }])).toBe('2025-01-02')
+  })
+  it('lists non-zero types, largest first', () => {
+    expect(typeRows({ gym: 3, football_training: 5, football_match: 0, walk: 3, run: 0, other: 0 }))
+      .toEqual([{ type: 'football_training', count: 5 }, { type: 'gym', count: 3 }, { type: 'walk', count: 3 }])
+  })
+  it('resolves trained exercises sorted by Swedish name', () => {
+    const ex = [{ id: '1', name: 'Översträck' }, { id: '2', name: 'Knäböj' }, { id: '3', name: 'Axelpress' }]
+    expect(trainedExercises(['1', '2', 'x'], ex).map((e) => e.name)).toEqual(['Knäböj', 'Översträck'])
   })
 })
