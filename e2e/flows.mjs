@@ -16,6 +16,9 @@ export async function run({ browser, devices, BASE, root, newPage, shot, check, 
   await shot(page, 'flow-1-workout-started')
 
   // Sets are prefilled from history: completing one is a single tap.
+  const box = squat.getByLabel('Din historik för övningen')
+  check(await box.waitFor({ timeout: 5000 }).then(() => true, () => false), 'exercise shows PB / Senast / Oftast box')
+  check(/PB/i.test(await box.innerText()) && /Senast/i.test(await box.innerText()), 'box lists PB and last weight')
   const before = completedSets()
   await squat.getByRole('button', { name: 'Klarmarkera set 1' }).click()
   await page.waitForTimeout(400)

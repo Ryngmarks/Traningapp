@@ -19,6 +19,14 @@
 - **Släng pass:** raderar det pågående passet helt.
 - **Framsteg:** antal utförda arbetsset av planerade.
 
+## Rutan PB / Senast / Oftast
+Varje övning i ett pågående pass visar en liten ruta byggd på dina avslutade arbetsset (uppvärmning räknas inte):
+- **PB**: tyngsta vikten du lyft (med antal reps). För kroppsvikt gäller flest reps, för tid längst tid och för distans och konditionsmaskiner längst distans.
+- **Senast**: bästa värdet i senaste passet med övningen.
+- **Oftast**: vikten du kört flest set med. Visas bara för viktövningar med minst två pass.
+
+Implementation: `exerciseSnapshot` i `src/domain/progression.ts`.
+
 ## Progression (dubbel progression)
 Arbeta inom ett repsintervall, t.ex. 3 × 8–12.
 1. Senaste passets **arbetsset** bedöms. Uppvärmning räknas inte.
