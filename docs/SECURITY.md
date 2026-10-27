@@ -3,8 +3,21 @@
 Privat app med personliga tränings- och hälsouppgifter. Utgångspunkten är att repot blir publikt: ingen säkerhet bygger på att koden är hemlig.
 
 ## Modell
-- **Autentisering:** Supabase Auth med e-post och lösenord. Självregistrering är avstängd, så konton skapas av ägaren i dashboarden. Anonym inloggning är avstängd.
-- **Auktorisering:** Row Level Security på **alla** tabeller i `public`. Policies ger bara rollen `authenticated` åtkomst och bara till egna rader (`user_id = (select auth.uid())`). `anon` har inga rättigheter alls på tabeller eller funktioner.
+
+### Delning (beslut 2026-10-27)
+Appen har bara inbjudna medlemmar. Mellan dem gäller:
+
+| Data | Vem ser | Vem ändrar |
+|---|---|---|
+| Mallar (`workout_templates`, `template_exercises`) och egna övningar (`exercises`) | Alla medlemmar | Bara skaparen |
+| Globala övningar och startpass (`user_id`/`owner_id` är null) | Alla medlemmar | Ingen, bara migrationer |
+| Visningsnamn (`members`) | Alla medlemmar | Bara via egen profil (trigger) |
+| Profil (tidszon, viktsteg), aktiviteter, set, mätvärden, historiska totaler, importer, hälsodata | Bara ägaren | Bara ägaren |
+
+Startar man någon annans pass skapas ett eget pass med passets namn som ögonblicksbild. Det kopplas inte till den andras mall (`template_id` är null).
+
+- **Autentisering:** Supabase Auth med e-post och lösenord. Självregistrering är avstängd. Ägaren bjuder in vänner via *Authentication → Users → Invite user*. Inbjudningslänken leder till appen, där den nya medlemmen väljer namn och lösenord (minst 12 tecken). Anonym inloggning är avstängd.
+- **Auktorisering:** Row Level Security på **alla** tabeller i `public`. Policies ger bara rollen `authenticated` åtkomst. Skrivning gäller alltid bara egna rader (`user_id = (select auth.uid())`), och läsning gäller egna rader utom för de delade tabellerna ovan. `anon` har inga rättigheter alls på tabeller eller funktioner.
 - **Ägarskap i relationer:** barnrader refererar `(parent_id, user_id)` med sammansatta FK, så en rad kan inte kopplas till någon annans förälder. Referenser till övningar kontrolleras i policyn (global eller egen).
 - **Minsta rättigheter:** standardrättigheterna Supabase ger `anon` och `authenticated` dras in (`revoke all` och `alter default privileges`). Bara det appen behöver beviljas igen. `profiles` får bara uppdateras i tre kolumner. Globala övningar kan läsas men aldrig skrivas. Hälsotabellerna är skrivskyddade för klienten tills en granskad importväg finns.
 - **Funktioner:** API-funktioner är `security invoker` och kör alltså med anroparens RLS. `security definer` används bara i triggern för nya användare, med `search_path = ''` och utan exekveringsrätt för API-roller.
@@ -21,10 +34,11 @@ Privat app med personliga tränings- och hälsouppgifter. Utgångspunkten är at
 `npm run test:db` (`supabase/tests/rls.test.ts`) kör mot en riktig Postgres och verifierar bland annat:
 - RLS är på för varje tabell, och testet misslyckas om en ny tabell saknar täckning
 - `anon` kommer inte åt någon tabell eller funktion
-- användare B kan inte **SELECT**, **INSERT**, **UPDATE** eller **DELETE** användare A:s data i någon tabell
-- B kan inte koppla barnrader till A:s föräldrar, använda A:s privata övningar, flytta egna rader till A, starta pass från A:s mall eller avsluta A:s pass
+- användare B kan inte **SELECT** användare A:s privata data, och kan inte **INSERT**, **UPDATE** eller **DELETE** A:s rader i någon tabell, inte heller delade mallar och övningar
+- B kan läsa och starta A:s delade pass och använda A:s övningar, men passet blir B:s eget och kopplas inte till A:s mall. B ser A:s namn men inget annat ur A:s profil.
+- B kan inte koppla barnrader till A:s föräldrar, flytta egna rader till A, ändra A:s mall eller avsluta A:s pass
 - globala övningar är skrivskyddade
-- bootstrap-funktionerna kan inte anropas via API:t
+- medlemskatalogen (`members`) kan inte skrivas via API:t
 
 ## Checklista före produktionsdata
 - [ ] Supabase: *Allow new users to sign up* av, *Confirm email* på, minsta lösenordslängd 12, *Secure password change* på.

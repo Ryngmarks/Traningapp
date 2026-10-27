@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router'
 import { type ActivityRow, toFact, useActivities, useDailySteps } from '@/data/activities'
 import { DataError } from '@/data/errors'
 import { type Profile, useProfile } from '@/data/profile'
-import { useTemplates } from '@/data/templates'
+import { useUserId } from '@/data/auth'
+import { isOwnTemplate, useTemplates } from '@/data/templates'
 import { useHistoricalTotals } from '@/data/totals'
 import { startWorkout, useActiveWorkout } from '@/data/workout'
 import { periodRange } from '@/domain/dates'
@@ -92,11 +93,18 @@ function StartCard({ gymSessions }: { gymSessions: ActivityRow[] | undefined }) 
   const toast = useToast()
   const active = useActiveWorkout()
   const templates = useTemplates()
+  const userId = useUserId()
   const [starting, setStarting] = useState(false)
 
   const next = useMemo(
-    () => pickNextTemplate(templates.data ?? [], (gymSessions ?? []).filter((a) => a.type === 'gym')),
-    [templates.data, gymSessions],
+    () => {
+      // Suggest from the user's own templates; fall back to the shared starter templates.
+      const all = templates.data ?? []
+      const own = all.filter((t) => isOwnTemplate(t, userId))
+      return pickNextTemplate(own.length > 0 ? own : all.filter((t) => t.user_id === null),
+        (gymSessions ?? []).filter((a) => a.type === 'gym'))
+    },
+    [templates.data, gymSessions, userId],
   )
 
   async function start(templateId: string | null) {

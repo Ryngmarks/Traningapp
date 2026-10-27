@@ -49,8 +49,12 @@ async function failCode(p: Promise<unknown>): Promise<string> {
 const ALL_USER_TABLES = [
   'profiles', 'exercises', 'workout_templates', 'template_exercises', 'imports',
   'activities', 'activity_metrics', 'performed_exercises', 'performed_sets',
-  'historical_totals', 'daily_metrics', 'heart_rate_samples',
+  'historical_totals', 'daily_metrics', 'heart_rate_samples', 'members',
 ]
+
+// Shared with every member by design (docs/SECURITY.md → Delning). Everything
+// else is private to its owner.
+const SHARED_TABLES = ['exercises', 'workout_templates', 'template_exercises', 'members']
 
 // Fixture ids owned by user A, created once with the superuser connection.
 const fx = {
@@ -77,12 +81,12 @@ beforeAll(async () => {
     fx.exercise = (await client.query(
       `insert into exercises (owner_id, name, category) values ($1, 'A privat övning', 'legs') returning id`, [userA],
     )).rows[0].id
-    const tpl = await client.query(
-      `select t.id as tid, te.id as teid from workout_templates t join template_exercises te on te.template_id = t.id
-       where t.name = 'Fotbollsstyrka A' order by te.position limit 1`,
-    )
-    fx.template = tpl.rows[0].tid
-    fx.templateExercise = tpl.rows[0].teid
+    await client.query(`update profiles set display_name = 'Anna', timezone = 'Europe/Oslo' where id = $1`, [userA])
+    fx.template = (await client.query(`select save_template(null, 'A mall', null, $1::jsonb) as id`, [JSON.stringify([
+      { exercise_id: (await client.query(`select id from exercises where slug = 'back_squat'`)).rows[0].id, warmup_sets: 1, planned_sets: 2, rep_min: 5, rep_max: 8 },
+      { exercise_id: fx.exercise, planned_sets: 2, rep_min: 8, rep_max: 12 },
+    ])])).rows[0].id
+    fx.templateExercise = (await client.query(`select id from template_exercises where template_id = $1 order by position limit 1`, [fx.template])).rows[0].id
     fx.activity = (await client.query(`select start_workout($1, 'Europe/Stockholm') as id`, [fx.template])).rows[0].id
     const pe = await client.query(
       `select pe.id as peid, s.id as sid from performed_exercises pe join performed_sets s on s.performed_exercise_id = pe.id
@@ -138,8 +142,10 @@ describe('schema hardening', () => {
     expect(await failCode(as(null, (q) => q(`select last_performances('{}')`)))).toBe('42501')
   })
 
-  it('does not expose the security definer bootstrap functions', async () => {
-    expect(await failCode(as(userB, (q) => q(`select create_example_templates($1)`, [userA])))).toBe('42501')
+  it('does not let members write the members directory', async () => {
+    expect(await failCode(as(userB, (q) => q(`update members set display_name = 'x' where user_id = $1`, [userA])))).toBe('42501')
+    expect(await failCode(as(userB, (q) => q(`insert into members (user_id, display_name) values ($1, 'x')`, [userB])))).toBe('42501')
+    expect(await failCode(as(userB, (q) => q(`delete from members where user_id = $1`, [userA])))).toBe('42501')
   })
 })
 
@@ -158,9 +164,9 @@ describe('tenant isolation: user B against user A data', () => {
   }
   const idOf = (key: string) => (key === 'userA' ? userA : fx[key as keyof typeof fx])
 
-  it('SELECT: B sees none of A\'s rows in any table', async () => {
+  it('SELECT: B sees none of A\'s rows in any private table', async () => {
     await as(userB, async (q) => {
-      for (const table of ALL_USER_TABLES) {
+      for (const table of ALL_USER_TABLES.filter((t) => !SHARED_TABLES.includes(t))) {
         const col = table === 'profiles' ? 'id' : table === 'exercises' ? 'owner_id' : 'user_id'
         const res = await q(`select 1 from ${table} where ${col} = $1`, [userA])
         expect(res.rowCount, table).toBe(0)
@@ -241,16 +247,25 @@ describe('tenant isolation: user B against user A data', () => {
     }
   })
 
-  it('INSERT: B cannot reference A\'s private exercise from own template or workout', async () => {
+  it('SHARED: B can read A\'s templates, exercises and name, nothing else of A\'s profile', async () => {
+    await as(userB, async (q) => {
+      expect((await q(`select 1 from workout_templates where id = $1`, [fx.template])).rowCount).toBe(1)
+      expect((await q(`select 1 from template_exercises where template_id = $1`, [fx.template])).rowCount).toBe(2)
+      expect((await q(`select 1 from exercises where id = $1`, [fx.exercise])).rowCount).toBe(1)
+      expect((await q<{ display_name: string }>(`select display_name from members where user_id = $1`, [userA])).rows)
+        .toEqual([{ display_name: 'Anna' }])
+      expect((await q(`select 1 from profiles where id = $1`, [userA])).rowCount).toBe(0)
+    })
+  })
+
+  it('SHARED: B can use A\'s exercise in own template and workout', async () => {
     await as(userB, async (q) => {
       const tpl = (await q<{ id: string }>(`insert into workout_templates (name) values ('B') returning id`)).rows[0].id
-      expect(await failCode(q(
-        `insert into template_exercises (template_id, exercise_id, position) values ($1, $2, 0)`, [tpl, fx.exercise],
-      ))).toBe('42501')
-    })
-    await as(userB, async (q) => {
+      await q(`insert into template_exercises (template_id, exercise_id, position) values ($1, $2, 0)`, [tpl, fx.exercise])
       const act = (await q<{ id: string }>(`select start_workout() as id`)).rows[0].id
-      expect(await failCode(q(`select add_performed_exercise($1, $2, 0)`, [act, fx.exercise]))).toBe('P0002')
+      const peId = (await q<{ id: string }>(`select add_performed_exercise($1, $2, 0) as id`, [act, fx.exercise])).rows[0].id
+      const pe = await q<{ exercise_name: string }>(`select exercise_name from performed_exercises where id = $1`, [peId])
+      expect(pe.rows[0].exercise_name).toBe('A privat övning')
     })
   })
 
@@ -261,8 +276,17 @@ describe('tenant isolation: user B against user A data', () => {
     })
   })
 
-  it('RPC: B cannot start a workout from A\'s template or finish A\'s workout', async () => {
-    expect(await failCode(as(userB, (q) => q(`select start_workout($1)`, [fx.template])))).toBe('P0002')
+  it('RPC: B can start A\'s template, but the workout is B\'s and not linked to A\'s template', async () => {
+    await as(userB, async (q) => {
+      const act = (await q<{ id: string }>(`select start_workout($1) as id`, [fx.template])).rows[0].id
+      const a = await q<{ user_id: string; template_id: string | null; template_name: string }>(
+        `select user_id, template_id, template_name from activities where id = $1`, [act])
+      expect(a.rows[0]).toEqual({ user_id: userB, template_id: null, template_name: 'A mall' })
+      expect((await q(`select 1 from performed_exercises where activity_id = $1`, [act])).rowCount).toBe(2)
+    })
+  })
+
+  it('RPC: B cannot finish A\'s workout, change A\'s template or read A\'s history', async () => {
     expect(await failCode(as(userB, (q) => q(`select finish_workout($1)`, [fx.activity])))).toBe('P0002')
     expect(await failCode(as(userB, (q) => q(`select save_template($1, 'x', null, '[]'::jsonb)`, [fx.template])))).toBe('P0002')
     const res = await as(userB, (q) => q(`select * from last_performances(array[(select id from exercises where slug = 'back_squat')])`))
@@ -295,13 +319,25 @@ describe('global exercise library', () => {
 })
 
 describe('profiles', () => {
-  it('are created on sign up with two example templates', async () => {
+  it('are created on sign up with a member entry and no personal templates', async () => {
     await as(userB, async (q) => {
       expect((await q(`select 1 from profiles`)).rowCount).toBe(1)
+      expect((await q(`select 1 from members where user_id = $1`, [userB])).rowCount).toBe(1)
+      expect((await q(`select 1 from workout_templates where user_id = $1`, [userB])).rowCount).toBe(0)
+    })
+  })
+
+  it('share four read-only global starter templates', async () => {
+    await as(userB, async (q) => {
       const tpl = await q<{ name: string; n: number }>(
-        `select t.name, count(te.id)::int as n from workout_templates t join template_exercises te on te.template_id = t.id group by t.name order by t.name`,
+        `select t.name, count(te.id)::int as n from workout_templates t join template_exercises te on te.template_id = t.id
+         where t.user_id is null group by t.name order by t.name`,
       )
-      expect(tpl.rows).toEqual([{ name: 'Fotbollsstyrka A', n: 6 }, { name: 'Fotbollsstyrka B', n: 7 }])
+      expect(tpl.rows).toEqual([
+        { name: 'Helkropp A', n: 6 }, { name: 'Helkropp B', n: 6 }, { name: 'Underkropp', n: 6 }, { name: 'Överkropp', n: 6 },
+      ])
+      expect((await q(`update workout_templates set name = 'x' where user_id is null`)).rowCount).toBe(0)
+      expect((await q(`delete from template_exercises where user_id is null`)).rowCount).toBe(0)
     })
   })
 
@@ -358,7 +394,7 @@ describe('gym workflow RPCs', () => {
 
   it('finishing keeps only completed sets and is not repeatable', async () => {
     await as(userB, async (q) => {
-      const tpl = (await q<{ id: string }>(`select id from workout_templates where name = 'Fotbollsstyrka A'`)).rows[0].id
+      const tpl = (await q<{ id: string }>(`select id from workout_templates where name = 'Helkropp A'`)).rows[0].id
       const act = (await q<{ id: string }>(`select start_workout($1) as id`, [tpl])).rows[0].id
       const first = (await q<{ id: string }>(
         `select s.id from performed_sets s join performed_exercises pe on pe.id = s.performed_exercise_id
@@ -393,13 +429,15 @@ describe('gym workflow RPCs', () => {
 
   it('editing a template does not change past workouts', async () => {
     await as(userB, async (q) => {
-      const tpl = (await q<{ id: string }>(`select id from workout_templates where name = 'Fotbollsstyrka B'`)).rows[0].id
+      const squat = (await q<{ id: string }>(`select id from exercises where slug = 'back_squat'`)).rows[0].id
+      const tpl = (await q<{ id: string }>(`select save_template(null, 'Mitt pass', null, $1::jsonb) as id`,
+        [JSON.stringify([{ exercise_id: squat, planned_sets: 3 }, { exercise_id: squat, planned_sets: 2 }])])).rows[0].id
       const act = (await q<{ id: string }>(`select start_workout($1) as id`, [tpl])).rows[0].id
       await q(`select save_template($1, 'Omdöpt', null, '[]'::jsonb)`, [tpl])
       const a = await q<{ template_name: string }>(`select template_name from activities where id = $1`, [act])
-      expect(a.rows[0].template_name).toBe('Fotbollsstyrka B')
+      expect(a.rows[0].template_name).toBe('Mitt pass')
       const n = await q(`select 1 from performed_exercises where activity_id = $1`, [act])
-      expect(n.rowCount).toBe(7)
+      expect(n.rowCount).toBe(2)
       await q(`delete from workout_templates where id = $1`, [tpl])
       const after = await q<{ template_id: string | null }>(`select template_id from activities where id = $1`, [act])
       expect(after.rows[0].template_id).toBeNull()

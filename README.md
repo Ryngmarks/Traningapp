@@ -23,7 +23,8 @@ npm run dev                      # http://localhost:5173
 1. Skapa ett projekt på supabase.com (region t.ex. `eu-north-1`, Stockholm).
 2. Kör migrationerna: `npx supabase link --project-ref <ref>` och sedan `npx supabase db push`. Alternativt klistrar du in filerna i `supabase/migrations/` i SQL Editor i ordning.
 3. **Auth → Providers → Email:** stäng av *Allow new users to sign up*. Slå på *Confirm email*. Sätt minsta lösenordslängd till 12.
-4. **Auth → Users → Add user:** skapa ditt konto (e-post + lösenord). Profil och två exempelpass skapas automatiskt.
+4. **Auth → Users → Add user:** skapa ditt konto (e-post + lösenord). Profilen skapas automatiskt.
+   **Bjuda in en vän:** *Auth → Users → Invite user* med vännens e-post. Länken i mejlet öppnar appen, där vännen väljer namn och lösenord. Se till att appens adress finns under *Redirect URLs*.
 5. **Auth → URL Configuration:** sätt *Site URL* till produktions-URL:en och lägg till preview-URL:er under *Redirect URLs*.
 6. Kopiera *Project URL* och *anon/publishable key* (Settings → API) till `.env.local` och till Vercel.
 

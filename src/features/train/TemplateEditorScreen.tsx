@@ -5,7 +5,8 @@ import type { MeasurementType } from '@/domain/types'
 import { parseNumberInput, templateSchema } from '@/domain/validation'
 import { toDataError } from '@/data/errors'
 import type { Exercise } from '@/data/exercises'
-import { type Template, useDeleteTemplate, useSaveTemplate, useTemplate } from '@/data/templates'
+import { useUserId } from '@/data/auth'
+import { isOwnTemplate, type Template, useDeleteTemplate, useSaveTemplate, useTemplate } from '@/data/templates'
 import { Button, IconButton } from '@/ui/Button'
 import { SectionTitle } from '@/ui/Card'
 import { Field, TextArea, TextInput } from '@/ui/Field'
@@ -15,10 +16,12 @@ import { Banner, ErrorState, Skeleton } from '@/ui/States'
 import { useToast } from '@/ui/Toast'
 import { CountStepper } from './components/CountStepper'
 import { ExercisePicker } from './components/ExercisePicker'
+import { SharedTemplateView } from './SharedTemplateView'
 
 export function TemplateEditorScreen() {
   const { id } = useParams()
   const tpl = useTemplate(id)
+  const userId = useUserId()
   if (!id) return <TemplateForm key="new" />
   if (tpl.isPending) {
     return (
@@ -41,6 +44,8 @@ export function TemplateEditorScreen() {
       </Screen>
     )
   }
+  // Shared and global templates are read-only: start or copy them instead.
+  if (!isOwnTemplate(tpl.data, userId)) return <SharedTemplateView template={tpl.data} />
   return <TemplateForm key={tpl.data.id} template={tpl.data} />
 }
 
