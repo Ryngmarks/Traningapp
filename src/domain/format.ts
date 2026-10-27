@@ -95,6 +95,7 @@ export const MEASUREMENT_LABEL: Record<MeasurementType, string> = {
   bodyweight_reps: 'Kroppsvikt × reps',
   duration: 'Tid',
   distance: 'Distans',
+  cardio: 'Tid, km, km/h, lutning, kcal',
 }
 
 export const SOURCE_LABEL: Record<DataSource, string> = {
@@ -103,4 +104,19 @@ export const SOURCE_LABEL: Record<DataSource, string> = {
   import_json: 'JSON-import',
   apple_health: 'Apple Hälsa',
   other: 'Annan källa',
+}
+
+/** "32 min · 5,2 km · 10 km/h · 2 % · 320 kcal" with whatever values a cardio set has. */
+export function formatCardio(s: {
+  duration_s: number | null; distance_m: number | null
+  speed_kmh?: number | null; incline_pct?: number | null; calories?: number | null
+}): string {
+  const parts = [
+    s.duration_s != null ? formatDuration(s.duration_s) : null,
+    s.distance_m != null ? formatDistance(s.distance_m) : null,
+    s.speed_kmh != null ? `${nf1.format(s.speed_kmh)} km/h` : null,
+    s.incline_pct != null ? `${nf1.format(s.incline_pct)} % lutning` : null,
+    s.calories != null ? `${nf0.format(s.calories)} kcal` : null,
+  ].filter(Boolean)
+  return parts.length > 0 ? parts.join(' · ') : '–'
 }

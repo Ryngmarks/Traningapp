@@ -4,7 +4,7 @@
 | Begrepp | Betydelse |
 |---|---|
 | Övning | Rad i biblioteket: kategori, muskler, utrustning, kort instruktion och mättyp |
-| Mättyp | `weight_reps` (vikt × reps), `bodyweight_reps` (reps, valfri extravikt), `duration` (sekunder), `distance` (meter) |
+| Mättyp | `weight_reps` (vikt × reps), `bodyweight_reps` (reps, valfri extravikt), `duration` (sekunder), `distance` (meter), `cardio` (konditionsmaskin: tid i minuter, km, km/h, lutning %, kcal; tid *eller* distans räcker för att klicka av, resten är valfritt) |
 | Mall | Namngivet pass med ordnade övningar: uppvärmningsset, arbetsset, repsintervall eller mål-tid/distans, vila |
 | Aktivitet | Ett träningstillfälle av valfri typ. Ett gympass är en aktivitet med utförda övningar och set. |
 | Set | `warmup` eller `working`. Räknas som utfört när `completed_at` är satt. |

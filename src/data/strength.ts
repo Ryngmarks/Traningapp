@@ -12,6 +12,9 @@ interface Row {
   reps: number | null
   duration_s: number | null
   distance_m: number | null
+  speed_kmh: number | null
+  incline_pct: number | null
+  calories: number | null
   performed_exercise: { exercise_id: string | null; activity: { id: string; local_date: string; status: string } }
 }
 
@@ -22,7 +25,7 @@ export function useExerciseHistory(exerciseId: string | undefined) {
     enabled: Boolean(exerciseId),
     queryFn: async (): Promise<CompletedSet[]> => {
       const rows = unwrap(await supabase.from('performed_sets')
-        .select('position, kind, weight_kg, reps, duration_s, distance_m, performed_exercise:performed_exercises!inner(exercise_id, activity:activities!inner(id, local_date, status))')
+        .select('position, kind, weight_kg, reps, duration_s, distance_m, speed_kmh, incline_pct, calories, performed_exercise:performed_exercises!inner(exercise_id, activity:activities!inner(id, local_date, status))')
         .eq('performed_exercise.exercise_id', exerciseId!)
         .eq('performed_exercise.activity.status', 'completed')
         .not('completed_at', 'is', null)
@@ -30,6 +33,7 @@ export function useExerciseHistory(exerciseId: string | undefined) {
       return rows
         .map((r) => ({
           kind: r.kind, weight_kg: r.weight_kg, reps: r.reps, duration_s: r.duration_s, distance_m: r.distance_m,
+          speed_kmh: r.speed_kmh, incline_pct: r.incline_pct, calories: r.calories,
           date: r.performed_exercise.activity.local_date,
           activityId: r.performed_exercise.activity.id,
         }))

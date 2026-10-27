@@ -12,6 +12,8 @@ PostgreSQL via Supabase. Migrationer finns i `supabase/migrations/` och körs i 
 | `…000500_more_exercise_categories.sql` | Kategorierna bröst, rygg, axlar och armar |
 | `…000600_sharing.sql` | Delning av mallar och övningar mellan medlemmar, tabellen `members`, nya användare får inga egna exempelpass |
 | `…000700_general_gym_library.sql` | 27 allmänna gymövningar, omkategorisering och fyra globala startpass |
+| `…000800_cardio_measurement.sql` | Mättypen `cardio` |
+| `…000900_cardio_sets.sql` | `performed_sets.speed_kmh`, `incline_pct`, `calories`; löpband, crosstrainer och motionscykel blir `cardio`; förifyllning och "senast" tar med de nya värdena |
 
 TypeScript-typerna i `src/data/database.types.ts` genereras från migrationerna (`npm run db:types`), och CI kontrollerar att de är i synk.
 
@@ -25,7 +27,7 @@ TypeScript-typerna i `src/data/database.types.ts` genereras från migrationerna 
 | `activities` | Alla träningstillfällen: gym, fotboll, match, promenad, löpning, övrigt | uuid, `unique(id, user_id)` |
 | `activity_metrics` | Valfria mätvärden 1:1 (distans, steg under passet, snitt-/maxpuls) | `(activity_id, user_id)` → aktivitet |
 | `performed_exercises` | Utförd övning (ögonblicksbild av namn, kategori och mättyp) | `(activity_id, user_id)` → aktivitet |
-| `performed_sets` | Set: typ (uppvärmning/arbete), vikt, reps, tid, distans, `completed_at` | `(performed_exercise_id, user_id)` → övning |
+| `performed_sets` | Set: typ (uppvärmning/arbete), vikt, reps, tid, distans, för konditionsmaskiner även hastighet, lutning och kalorier, `completed_at` | `(performed_exercise_id, user_id)` → övning |
 | `members` | Visningsnamn som alla medlemmar ser, synkat från `profiles` med trigger | `user_id` |
 | `historical_totals` | Totalsummor utan datum, t.ex. 110 gymbesök | uuid |
 | `imports` | Logg per import (rader, infogade, dubbletter, fel) | uuid, `unique(id, user_id)` |

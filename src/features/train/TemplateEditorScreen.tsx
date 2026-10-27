@@ -96,7 +96,7 @@ function newItem(e: Exercise): DraftItem {
     exercise_id: e.id,
     meta: { name: e.name, measurement_type: m },
     warmup_sets: 0,
-    planned_sets: 3,
+    planned_sets: m === 'cardio' ? 1 : 3,
     rep_min: isReps(m) ? '8' : '',
     rep_max: isReps(m) ? '12' : '',
     target_duration_s: m === 'duration' ? '30' : '',
@@ -316,7 +316,7 @@ function ItemEditor({ item, index, count, errors, onChange, onMove, onRemove }: 
                 onFocus={(e) => e.currentTarget.select()} onChange={(e) => onChange({ target_duration_s: e.target.value })} />
             )}
           </Field>
-        ) : (
+        ) : m === 'distance' ? (
           <Field label="Mål (meter)" error={err('target_distance_m')}>
             {(fid) => (
               <TextInput id={fid} inputMode="numeric" value={item.target_distance_m} placeholder="20"
@@ -324,6 +324,8 @@ function ItemEditor({ item, index, count, errors, onChange, onMove, onRemove }: 
                 onFocus={(e) => e.currentTarget.select()} onChange={(e) => onChange({ target_distance_m: e.target.value })} />
             )}
           </Field>
+        ) : (
+          <p className="px-0.5 text-[13px] text-muted">Tid, km, hastighet, lutning och kalorier fylls i under passet.</p>
         )}
       </div>
     </div>

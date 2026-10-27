@@ -10,6 +10,9 @@ export interface WorkoutSet {
   reps: number | null
   duration_s: number | null
   distance_m: number | null
+  speed_kmh?: number | null
+  incline_pct?: number | null
+  calories?: number | null
   completed_at: string | null
 }
 
@@ -57,6 +60,9 @@ export function isSetReady(s: Pick<WorkoutSet, 'weight_kg' | 'reps' | 'duration_
       return s.duration_s != null && s.duration_s > 0
     case 'distance':
       return s.distance_m != null && s.distance_m > 0
+    case 'cardio':
+      // Machines show different values; time or distance is enough.
+      return (s.duration_s != null && s.duration_s > 0) || (s.distance_m != null && s.distance_m > 0)
   }
 }
 
@@ -74,6 +80,9 @@ export function nextSetValues(sets: readonly WorkoutSet[], kind: SetKind = 'work
     reps: prev?.reps ?? null,
     duration_s: prev?.duration_s ?? null,
     distance_m: prev?.distance_m ?? null,
+    speed_kmh: prev?.speed_kmh ?? null,
+    incline_pct: prev?.incline_pct ?? null,
+    calories: prev?.calories ?? null,
   }
 }
 

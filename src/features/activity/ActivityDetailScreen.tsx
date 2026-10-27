@@ -6,8 +6,7 @@ import { keys } from '@/data/queryClient'
 import { fetchWorkout, type PerformedExercise } from '@/data/workout'
 import {
   ACTIVITY_LABEL, formatDistance, formatDuration, formatLongDate, formatNumber, formatPace, formatWeight,
-  paceSecondsPerKm, SOURCE_LABEL,
-} from '@/domain/format'
+  paceSecondsPerKm, SOURCE_LABEL, formatCardio } from '@/domain/format'
 import { totalVolume } from '@/domain/progression'
 import { ActivityIcon, Pill } from '@/ui/Badge'
 import { Button, IconButton } from '@/ui/Button'
@@ -120,6 +119,7 @@ function setText(s: PerformedExercise['sets'][number], m: PerformedExercise['mea
     case 'bodyweight_reps': return s.weight_kg ? `+${formatWeight(s.weight_kg)} × ${s.reps ?? '–'}` : `${s.reps ?? '–'} reps`
     case 'duration': return formatDuration(s.duration_s)
     case 'distance': return formatDistance(s.distance_m)
+    case 'cardio': return formatCardio(s)
   }
 }
 

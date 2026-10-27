@@ -32,4 +32,11 @@ describe('workout helpers', () => {
     expect(nextSetValues(exercises[0]!.sets)).toMatchObject({ position: 3, kind: 'working', weight_kg: 60, reps: 8 })
     expect(nextSetValues([])).toMatchObject({ position: 0, weight_kg: null })
   })
+
+  it('accepts a cardio set with time or distance', () => {
+    const base = { weight_kg: null, reps: null, duration_s: null, distance_m: null }
+    expect(isSetReady({ ...base, duration_s: 1800 }, 'cardio')).toBe(true)
+    expect(isSetReady({ ...base, distance_m: 5200 }, 'cardio')).toBe(true)
+    expect(isSetReady(base, 'cardio')).toBe(false)
+  })
 })

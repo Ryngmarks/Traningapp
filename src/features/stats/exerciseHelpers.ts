@@ -1,4 +1,4 @@
-import { formatDistance, formatDuration } from '@/domain/format'
+import { formatDistance, formatDuration, formatCardio } from '@/domain/format'
 import type { CompletedSet, LocalDate, MeasurementType } from '@/domain/types'
 
 // Pure helpers for the per-exercise statistics screen. Numbers come from
@@ -46,6 +46,7 @@ const kg = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 })
 export function setsLine(sets: readonly CompletedSet[], measurement: MeasurementType): string {
   if (measurement === 'duration') return sets.map((s) => formatDuration(s.duration_s, 'clock')).join(', ')
   if (measurement === 'distance') return sets.map((s) => formatDistance(s.distance_m)).join(', ')
+  if (measurement === 'cardio') return sets.map(formatCardio).join(' / ')
   const groups: { weight: number | null; reps: string[] }[] = []
   for (const s of sets) {
     const w = s.weight_kg != null && s.weight_kg > 0 ? s.weight_kg : null

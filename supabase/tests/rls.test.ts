@@ -445,6 +445,27 @@ describe('gym workflow RPCs', () => {
   })
 })
 
+describe('cardio sets', () => {
+  it('store time, distance, speed, incline and calories and prefill them next time', async () => {
+    await as(userB, async (q) => {
+      const treadmill = (await q<{ id: string; measurement_type: string }>(`select id, measurement_type from exercises where slug = 'treadmill'`)).rows[0]
+      expect(treadmill.measurement_type).toBe('cardio')
+      const first = (await q<{ id: string }>(`select start_workout() as id`)).rows[0].id
+      const pe = (await q<{ id: string }>(`select add_performed_exercise($1, $2, 0, 0, 1) as id`, [first, treadmill.id])).rows[0].id
+      await q(`update performed_sets set duration_s = 1800, distance_m = 5200, speed_kmh = 10.5, incline_pct = 2, calories = 320, completed_at = now()
+               where performed_exercise_id = $1`, [pe])
+      await q(`select finish_workout($1)`, [first])
+      const second = (await q<{ id: string }>(`select start_workout() as id`)).rows[0].id
+      const pe2 = (await q<{ id: string }>(`select add_performed_exercise($1, $2, 0, 0, 1) as id`, [second, treadmill.id])).rows[0].id
+      const s2 = await q(`select duration_s, distance_m, speed_kmh::float, incline_pct::float, calories, completed_at from performed_sets where performed_exercise_id = $1`, [pe2])
+      expect(s2.rows).toEqual([{ duration_s: 1800, distance_m: 5200, speed_kmh: 10.5, incline_pct: 2, calories: 320, completed_at: null }])
+      const last = await q<{ sets: { speed_kmh: number; calories: number }[] }>(`select sets from last_performances(array[$1]::uuid[])`, [treadmill.id])
+      expect(last.rows[0].sets[0]).toMatchObject({ speed_kmh: 10.5, calories: 320 })
+      expect(await failCode(q(`update performed_sets set speed_kmh = 99 where performed_exercise_id = $1`, [pe2]))).toBe('23514')
+    })
+  })
+})
+
 describe('activities and imports', () => {
   it('derives local_date from the activity timezone', async () => {
     await as(userB, async (q) => {
