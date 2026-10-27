@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router'
 import { useExercises } from '@/data/exercises'
-import { useExerciseHistory } from '@/data/strength'
+import { useExerciseHistory, useTrainedExercises } from '@/data/strength'
 import { CATEGORY_LABEL, formatDistance, formatDuration, formatLongDate, formatNumber, formatShortDate, formatWeight } from '@/domain/format'
 import { personalBests, sessionSummaries } from '@/domain/progression'
 import type { CompletedSet, MeasurementType } from '@/domain/types'
@@ -20,7 +20,9 @@ export function ExerciseStatsScreen() {
   const { id } = useParams()
   const exercises = useExercises()
   const history = useExerciseHistory(id)
-  const exercise = exercises.data?.find((e) => e.id === id)
+  const trained = useTrainedExercises()
+  // Archived exercises are not in the library list; fall back to the history snapshot.
+  const exercise = exercises.data?.find((e) => e.id === id) ?? trained.data?.find((e) => e.id === id)
 
   return (
     <Screen>

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { type ActivityRow, toFact, useActivities, useDailySteps } from '@/data/activities'
 import { useExercises } from '@/data/exercises'
-import { useTrainedExerciseIds } from '@/data/strength'
+import { type TrainedExercise, useTrainedExercises } from '@/data/strength'
 import { type HistoricalTotalRow, useHistoricalTotals } from '@/data/totals'
 import { type Period, periodRange } from '@/domain/dates'
 import { ACTIVITY_LABEL, CATEGORY_LABEL, formatDistance, formatDuration, formatNumber } from '@/domain/format'
@@ -242,10 +242,10 @@ const EMPTY_TEXT: Record<Period, string> = {
 const STRENGTH_PREVIEW = 6
 
 function StrengthSection() {
-  const ids = useTrainedExerciseIds()
+  const ids = useTrainedExercises()
   const exercises = useExercises()
   const [showAll, setShowAll] = useState(false)
-  const list = useMemo(() => trainedExercises(ids.data ?? [], exercises.data ?? []), [ids.data, exercises.data])
+  const list = useMemo(() => trainedExercises<TrainedExercise>(ids.data ?? [], exercises.data ?? []), [ids.data, exercises.data])
   const pending = ids.isPending || exercises.isPending
   const error = ids.error ?? exercises.error
   const shown = showAll ? list : list.slice(0, STRENGTH_PREVIEW)

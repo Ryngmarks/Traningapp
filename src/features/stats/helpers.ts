@@ -111,7 +111,8 @@ export function typeRows(sessions: Readonly<Record<ActivityType, number>>): { ty
 }
 
 /** Exercises the user has trained, resolved to library rows and sorted by name. */
-export function trainedExercises<E extends { id: string; name: string }>(ids: readonly string[], exercises: readonly E[]): E[] {
-  const set = new Set(ids)
-  return exercises.filter((e) => set.has(e.id)).sort((a, b) => a.name.localeCompare(b.name, 'sv'))
+/** Trained exercises, preferring the current library row (renamed) over the history snapshot (archived). */
+export function trainedExercises<E extends { id: string; name: string }>(trained: readonly E[], library: readonly E[]): E[] {
+  const byId = new Map(library.map((e) => [e.id, e]))
+  return trained.map((t) => byId.get(t.id) ?? t).sort((a, b) => a.name.localeCompare(b.name, 'sv'))
 }

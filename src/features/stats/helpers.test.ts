@@ -70,7 +70,9 @@ describe('summary helpers', () => {
       .toEqual([{ type: 'football_training', count: 5 }, { type: 'gym', count: 3 }, { type: 'walk', count: 3 }])
   })
   it('resolves trained exercises sorted by Swedish name', () => {
-    const ex = [{ id: '1', name: 'Översträck' }, { id: '2', name: 'Knäböj' }, { id: '3', name: 'Axelpress' }]
-    expect(trainedExercises(['1', '2', 'x'], ex).map((e) => e.name)).toEqual(['Knäböj', 'Översträck'])
+    const library = [{ id: '1', name: 'Översträck' }, { id: '2', name: 'Knäböj (ny)' }, { id: '3', name: 'Axelpress' }]
+    const trained = [{ id: '1', name: 'Översträck' }, { id: '2', name: 'Knäböj' }, { id: 'x', name: 'Arkiverad' }]
+    // Library name wins (renamed); archived exercises fall back to the history snapshot.
+    expect(trainedExercises(trained, library).map((e) => e.name)).toEqual(['Arkiverad', 'Knäböj (ny)', 'Översträck'])
   })
 })

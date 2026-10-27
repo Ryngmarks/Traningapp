@@ -287,7 +287,7 @@ function table(state, name, method, url, body, single) {
     }
     if (name === 'performed_exercises' && select.includes('activity')) {
       rows = rows.filter((p) => p.exercise_id && state.activities.find((a) => a.id === p.activity_id)?.status === 'completed')
-        .map((p) => ({ exercise_id: p.exercise_id, activity: { status: 'completed' } }))
+        .map((p) => ({ exercise_id: p.exercise_id, exercise_name: p.exercise_name, category: p.category, measurement_type: p.measurement_type, created_at: p.created_at, activity: { status: 'completed' } }))
     }
     if (name === 'daily_metrics') rows = []
     return { body: single ? rows[0] ?? null : rows, status: single && !rows[0] ? 406 : 200 }
