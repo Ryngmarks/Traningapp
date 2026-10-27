@@ -198,7 +198,8 @@ create table public.activities (
   started_at timestamptz not null,
   ended_at timestamptz,
   timezone text not null default 'Europe/Stockholm',
-  local_date date not null,
+  -- Always overwritten by activities_derive(); the default only keeps it optional for clients.
+  local_date date not null default current_date,
   duration_s integer check (duration_s between 0 and 86400),
   perceived_exertion smallint check (perceived_exertion between 1 and 10),
   notes text check (char_length(notes) <= 2000),

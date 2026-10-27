@@ -215,12 +215,12 @@ begin
   if p_template_id is null then
     insert into public.workout_templates (name, notes, sort_order)
     values (
-      p_name, p_notes,
+      p_name, nullif(btrim(p_notes), ''),
       coalesce((select max(sort_order) + 1 from public.workout_templates), 0)
     )
     returning id into v_id;
   else
-    update public.workout_templates set name = p_name, notes = p_notes
+    update public.workout_templates set name = p_name, notes = nullif(btrim(p_notes), '')
     where id = p_template_id
     returning id into v_id;
     if v_id is null then

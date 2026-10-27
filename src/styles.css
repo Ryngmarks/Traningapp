@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Use these via Tailwind utilities (bg-surface, text-muted,
+ * border-line, text-accent …) rather than raw colours, so the whole app stays
+ * consistent. See docs/ARCHITECTURE.md → "Design system".
+ */
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, system-ui, sans-serif;
+
+  /* Surfaces */
+  --color-bg: #0b0d10;
+  --color-surface: #13161b;
+  --color-raised: #1a1e25;
+  --color-sunken: #0f1115;
+  --color-line: #252a33;
+  --color-line-strong: #343b46;
+
+  /* Text */
+  --color-fg: #f3f5f7;
+  --color-muted: #9aa3ae;
+  --color-faint: #646d78;
+
+  /* Accent: one restrained highlight colour */
+  --color-accent: #c8f169;
+  --color-accent-strong: #d8fb86;
+  --color-accent-soft: rgb(200 241 105 / 0.12);
+  --color-on-accent: #10140a;
+
+  /* Status */
+  --color-danger: #f47272;
+  --color-danger-soft: rgb(244 114 114 / 0.12);
+  --color-warning: #f5c35b;
+  --color-warning-soft: rgb(245 195 91 / 0.12);
+
+  /* Activity series (charts, badges). Muted so the accent stays special. */
+  --color-act-gym: #c8f169;
+  --color-act-football: #6cc4f5;
+  --color-act-run: #f59e6c;
+  --color-act-walk: #b49cf5;
+  --color-act-other: #8b95a1;
+
+  --radius-card: 1.25rem;
+  --radius-control: 0.875rem;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-fade-in: fade-in 220ms var(--ease-out-soft) both;
+  --animate-slide-up: slide-up 280ms var(--ease-out-soft) both;
+  --animate-pop: pop 260ms var(--ease-out-soft) both;
+
+  @keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes slide-up { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: none } }
+  @keyframes pop { 0% { transform: scale(0.85) } 60% { transform: scale(1.08) } 100% { transform: scale(1) } }
+}
+
+@layer base {
+  html {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    text-size-adjust: 100%;
+  }
+  body {
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
+  }
+  /* Numbers line up in tables, sets and stats. */
+  .tabular { font-variant-numeric: tabular-nums; }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  input, textarea, select { font-size: 16px; } /* prevents iOS zoom on focus */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+  }
+}
+
+@utility pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+@utility pt-safe { padding-top: env(safe-area-inset-top); }
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
