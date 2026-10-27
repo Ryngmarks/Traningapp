@@ -217,14 +217,14 @@ const rpc = {
   add_performed_exercise(state, b) {
     return { body: addPerformedExercise(state, b.p_activity_id, b.p_exercise_id, b.p_position, { warmup_sets: b.p_warmup_sets, planned_sets: b.p_planned_sets, rep_min: b.p_rep_min, rep_max: b.p_rep_max }) }
   },
-  finish_workout(state, { p_activity_id }) {
+  finish_workout(state, { p_activity_id, p_ended_at }) {
     const act = state.activities.find((a) => a.id === p_activity_id && a.status === 'in_progress')
     if (!act) return { status: 404, body: { code: 'P0002', message: 'no active workout with this id' } }
     const peIds = new Set(state.performedExercises.filter((p) => p.activity_id === act.id).map((p) => p.id))
     state.sets = state.sets.filter((s) => !(peIds.has(s.performed_exercise_id) && !s.completed_at))
     state.performedExercises = state.performedExercises.filter((p) => !peIds.has(p.id) || state.sets.some((s) => s.performed_exercise_id === p.id))
     act.status = 'completed'
-    act.ended_at = new Date().toISOString()
+    act.ended_at = new Date(Math.max(Date.parse(p_ended_at ?? new Date().toISOString()), Date.parse(act.started_at))).toISOString()
     act.duration_s = Math.round((Date.parse(act.ended_at) - Date.parse(act.started_at)) / 1000)
     return { status: 204, body: null }
   },

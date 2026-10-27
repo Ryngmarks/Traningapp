@@ -125,6 +125,37 @@ export async function run({ browser, devices, BASE, root, newPage, shot, check, 
   check(state.sets.filter((x) => x.performed_exercise_id === cardioSet?.performed_exercise_id).length === 1, 'a cardio exercise starts with one set')
   await shot(page, 'flow-10-treadmill')
 
+  // Forgotten workout: the finish sheet suggests ending after the last set.
+  await page.getByRole('button', { name: 'Avsluta pass' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: /^Avsluta$/ }).click()
+  await page.waitForURL(`${BASE}/`)
+  await page.goto(`${BASE}/traning`)
+  await page.getByRole('button', { name: 'Starta Fotbollsstyrka B' }).click()
+  await page.waitForURL('**/traning/pass')
+  await page.locator('[aria-label="Stående längdhopp"]').first().getByRole('button', { name: 'Klarmarkera set 1' }).click()
+  await page.waitForTimeout(600)
+  const running = state.activities.find((x) => x.status === 'in_progress')
+  const hours = (h) => new Date(Date.now() - h * 3_600_000).toISOString()
+  running.started_at = hours(3)
+  for (const st of state.sets) if (st.completed_at && Date.parse(st.completed_at) > Date.now() - 60_000) st.completed_at = hours(2)
+  await page.reload()
+  await page.getByRole('button', { name: 'Avsluta pass' }).click()
+  const dialog = page.getByRole('dialog')
+  check(await dialog.getByText(/Glömde du avsluta/).waitFor({ timeout: 5000 }).then(() => true, () => false), 'finish sheet notices a forgotten workout')
+  await shot(page, 'flow-11-forgotten-finish')
+  await dialog.getByRole('button', { name: /^Avsluta$/ }).click()
+  await page.waitForURL(`${BASE}/`)
+  check(Math.abs(running.duration_s - 65 * 60) < 120, `forgotten workout ends 5 min after the last set (got ${running.duration_s}s)`)
+
+  // Adjust a finished workout's time afterwards.
+  await page.goto(`${BASE}/aktivitet/${running.id}`)
+  await page.getByRole('button', { name: 'Justera tid' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: '75 min' }).click()
+  await shot(page, 'flow-12-adjust-time')
+  await page.getByRole('dialog').getByRole('button', { name: 'Spara' }).click()
+  await page.waitForTimeout(600)
+  check(running.duration_s === 4500, `adjusted duration is saved (got ${running.duration_s})`)
+
   // Invite link: the new member chooses name and password.
   const invite = await context.newPage()
   await invite.goto(`${BASE}/#type=invite`)

@@ -47,8 +47,9 @@ export async function startWorkout(templateId: string | null): Promise<string> {
   return id
 }
 
-export async function finishWorkout(activityId: string): Promise<void> {
-  unwrap(await supabase.rpc('finish_workout', { p_activity_id: activityId }))
+/** Finish the workout; endedAt corrects the end time when it was left running. */
+export async function finishWorkout(activityId: string, endedAt?: string): Promise<void> {
+  unwrap(await supabase.rpc('finish_workout', { p_activity_id: activityId, ...(endedAt ? { p_ended_at: endedAt } : {}) }))
   queryClient.setQueryData(keys.activeWorkout, null)
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: keys.activities }),

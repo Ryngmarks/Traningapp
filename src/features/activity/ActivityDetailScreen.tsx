@@ -15,6 +15,7 @@ import { Screen, SubHeader } from '@/ui/Page'
 import { Stat } from '@/ui/Stat'
 import { EmptyState, ErrorState, ListSkeleton, Skeleton } from '@/ui/States'
 import { useToast } from '@/ui/Toast'
+import { AdjustTimeSheet } from './AdjustTimeSheet'
 import { activityTitle, zonedParts } from './helpers'
 
 export function ActivityDetailScreen() {
@@ -25,7 +26,7 @@ export function ActivityDetailScreen() {
   return (
     <Screen>
       <SubHeader title={row ? activityTitle(row) : 'Aktivitet'} back="/aktivitet"
-        action={row && row.type !== 'gym' ? <EditButton id={row.id} /> : undefined} />
+        action={row ? (row.type === 'gym' ? <AdjustTimeButton activity={row} /> : <EditButton id={row.id} />) : undefined} />
       {isPending ? (
         <div className="space-y-3"><Skeleton className="h-28 rounded-[var(--radius-card)]" /><Skeleton className="h-40 rounded-[var(--radius-card)]" /></div>
       ) : error ? (
@@ -36,6 +37,17 @@ export function ActivityDetailScreen() {
         <Detail a={row} />
       )}
     </Screen>
+  )
+}
+
+/** Gym sessions are edited set by set; their time can be corrected here. */
+function AdjustTimeButton({ activity }: { activity: ActivityRow }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <IconButton icon="clock" label="Justera tid" onClick={() => setOpen(true)} />
+      {open && <AdjustTimeSheet activity={activity} open={open} onClose={() => setOpen(false)} />}
+    </>
   )
 }
 

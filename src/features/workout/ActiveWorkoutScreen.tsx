@@ -163,9 +163,9 @@ function WorkoutSessionView({ initial, onEnding }: { initial: ActiveWorkout; onE
     if (leaving && session.unsavedCount === 0) goBack()
   }, [leaving, session.unsavedCount, goBack])
 
-  const finish = async () => {
+  const finish = async (endedAt?: string) => {
     onEnding(workout)
-    const ok = await session.finish()
+    const ok = await session.finish(endedAt)
     if (!ok) { onEnding(null); setFinishOpen(false); return }
     toast('Pass sparat')
     navigate('/', { replace: true })
@@ -278,6 +278,7 @@ function WorkoutSessionView({ initial, onEnding }: { initial: ActiveWorkout; onE
         onClose={() => setFinishOpen(false)}
         exercises={exercises}
         startedAt={workout.started_at}
+        timeZone={workout.timezone}
         unsavedCount={session.unsavedCount}
         onFinish={finish}
         onDiscard={discard}

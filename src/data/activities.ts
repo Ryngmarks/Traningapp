@@ -82,6 +82,22 @@ export function useSaveActivity() {
   })
 }
 
+/** Correct when an activity started and how long it lasted (e.g. a gym session left running). */
+export function useUpdateActivityTime() {
+  return useMutation({
+    mutationFn: async ({ id, startedAt, durationS }: { id: string; startedAt: string; durationS: number }) => {
+      const endedAt = new Date(Date.parse(startedAt) + durationS * 1000).toISOString()
+      unwrap(await supabase.from('activities')
+        .update({ started_at: startedAt, ended_at: endedAt, duration_s: durationS })
+        .eq('id', id))
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.activities })
+      queryClient.invalidateQueries({ queryKey: ['exercise-history'] })
+    },
+  })
+}
+
 export function useDeleteActivity() {
   return useMutation({
     mutationFn: async (id: string) => { unwrap(await supabase.from('activities').delete().eq('id', id)) },

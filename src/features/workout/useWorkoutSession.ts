@@ -199,7 +199,7 @@ export function useWorkoutSession(initial: ActiveWorkout) {
   }), [runStructural, workout.id])
 
   /** Finish even if not all planned sets are done. Refuses while anything is unsaved. */
-  const finish = useCallback(async (): Promise<boolean> => {
+  const finish = useCallback(async (endedAt?: string): Promise<boolean> => {
     setBusy(true)
     setError(null)
     try {
@@ -208,7 +208,7 @@ export function useWorkoutSession(initial: ActiveWorkout) {
         setError('Några set är inte sparade än. Kontrollera anslutningen och försök igen.')
         return false
       }
-      await finishWorkout(workout.id)
+      await finishWorkout(workout.id, endedAt)
       return true
     } catch (e) {
       setError(toDataError(e).message)
