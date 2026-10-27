@@ -90,3 +90,20 @@ export function nextSetValues(sets: readonly WorkoutSet[], kind: SetKind = 'work
 export function elapsedSeconds(startedAt: string, nowMs: number): number {
   return Math.max(0, Math.floor((nowMs - Date.parse(startedAt)) / 1000))
 }
+
+/** Gap after the last completed set that suggests the workout was left running. */
+export const FORGOTTEN_GAP_MS = 20 * 60_000
+/** Time added after the last set (cool-down, last walk to the locker room). */
+export const END_BUFFER_MS = 5 * 60_000
+
+/**
+ * When a workout was probably left running, a better end time: shortly after
+ * the last completed set. Null when the workout looks current or has no sets.
+ */
+export function suggestedEndTime(sets: readonly Pick<WorkoutSet, 'completed_at'>[], nowMs: number): string | null {
+  const times = sets.map((s) => (s.completed_at ? Date.parse(s.completed_at) : NaN)).filter((t) => Number.isFinite(t))
+  if (times.length === 0) return null
+  const last = Math.max(...times)
+  if (nowMs - last < FORGOTTEN_GAP_MS) return null
+  return new Date(Math.min(nowMs, last + END_BUFFER_MS)).toISOString()
+}

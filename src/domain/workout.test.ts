@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { currentExerciseId, isSetReady, nextSetValues, workoutProgress, type WorkoutExercise, type WorkoutSet } from './workout'
+import { currentExerciseId, isSetReady, nextSetValues, suggestedEndTime, workoutProgress, type WorkoutExercise, type WorkoutSet } from './workout'
 
 const set = (position: number, extra: Partial<WorkoutSet> = {}): WorkoutSet => ({
   id: `s${position}`, position, kind: 'working', weight_kg: 60, reps: 8, duration_s: null, distance_m: null, completed_at: null, ...extra,
@@ -38,5 +38,13 @@ describe('workout helpers', () => {
     expect(isSetReady({ ...base, duration_s: 1800 }, 'cardio')).toBe(true)
     expect(isSetReady({ ...base, distance_m: 5200 }, 'cardio')).toBe(true)
     expect(isSetReady(base, 'cardio')).toBe(false)
+  })
+
+  it('suggests ending shortly after the last set when the workout was left running', () => {
+    const now = Date.parse('2026-10-27T20:00:00Z')
+    const sets = [{ completed_at: '2026-10-27T17:30:00Z' }, { completed_at: '2026-10-27T17:42:00Z' }, { completed_at: null }]
+    expect(suggestedEndTime(sets, now)).toBe('2026-10-27T17:47:00.000Z')
+    expect(suggestedEndTime([{ completed_at: '2026-10-27T19:50:00Z' }], now)).toBeNull()
+    expect(suggestedEndTime([{ completed_at: null }], now)).toBeNull()
   })
 })

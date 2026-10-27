@@ -17,6 +17,8 @@
 - **Byta eller ta bort övning:** ett byte behåller planen (antal set och repsintervall) men förifyller från den nya övningens historik.
 - **Avsluta:** tillåtet även om alla planerade set inte är gjorda. Ej utförda set och övningar utan utförda set tas bort. Avslut nekas medan något är osparat.
 - **Släng pass:** raderar det pågående passet helt.
+- **Glömt att avsluta:** har det gått mer än 20 minuter sedan senast klarmarkerade set föreslår avslutet sluttiden *sista setet + 5 min* (förvalt). Man kan också välja *Nu* eller en egen tid. Sluttiden får inte vara före start eller efter nu.
+- **Justera tid i efterhand:** på ett sparat gympass (klockikonen) kan datum, starttid och längd rättas. Vecko- och månadsstatistiken flyttas automatiskt om datumet ändras.
 - **Framsteg:** antal utförda arbetsset av planerade.
 
 ## Rutan PB / Senast / Oftast

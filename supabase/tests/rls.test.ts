@@ -445,6 +445,22 @@ describe('gym workflow RPCs', () => {
   })
 })
 
+describe('correcting workout time', () => {
+  it('finishes with an earlier end time and lets the owner adjust start and length later', async () => {
+    await as(userB, async (q) => {
+      const act = (await q<{ id: string }>(`select start_workout() as id`)).rows[0].id
+      await q(`update activities set started_at = now() - interval '3 hours' where id = $1`, [act])
+      await q(`select finish_workout($1, now() - interval '2 hours')`, [act])
+      const a = await q<{ duration_s: number }>(`select duration_s from activities where id = $1`, [act])
+      expect(a.rows[0].duration_s).toBe(3600)
+      await q(`update activities set started_at = '2026-03-01T22:30:00Z', ended_at = '2026-03-01T23:45:00Z', duration_s = 4500 where id = $1`, [act])
+      const b = await q<{ duration_s: number; local_date: string }>(`select duration_s, to_char(local_date, 'YYYY-MM-DD') as local_date from activities where id = $1`, [act])
+      expect(b.rows[0]).toEqual({ duration_s: 4500, local_date: '2026-03-01' })
+      expect(await failCode(q(`update activities set ended_at = started_at - interval '1 minute' where id = $1`, [act]))).toBe('23514')
+    })
+  })
+})
+
 describe('cardio sets', () => {
   it('store time, distance, speed, incline and calories and prefill them next time', async () => {
     await as(userB, async (q) => {
