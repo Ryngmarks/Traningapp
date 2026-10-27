@@ -24,6 +24,7 @@ export class SyncQueue<T> {
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>()
   private readonly inFlight = new Map<string, Promise<void>>()
   private readonly failed = new Set<string>()
+  private closed = false
   private readonly opts: Required<SyncQueueOptions<T>>
 
   constructor(opts: SyncQueueOptions<T>) {
@@ -41,6 +42,7 @@ export class SyncQueue<T> {
   }
 
   private enqueue(op: SyncOp<T>, immediate: boolean): void {
+    if (this.closed) return
     this.desired.set(op.id, op)
     this.failed.delete(op.id)
     this.opts.onStatus(op.id, 'pending')
@@ -65,7 +67,7 @@ export class SyncQueue<T> {
       return
     }
     const op = this.desired.get(id)
-    if (!op) return
+    if (!op || this.closed) return
 
     const p = this.run(id, op)
     this.inFlight.set(id, p)
@@ -118,8 +120,15 @@ export class SyncQueue<T> {
     return this.failed.size
   }
 
+  /**
+   * Drop all queued work and accept no more (used after the workout is
+   * deleted). To leave a screen without losing edits, call flushAll() instead.
+   */
   dispose(): void {
+    this.closed = true
     for (const t of this.timers.values()) clearTimeout(t)
     this.timers.clear()
+    this.desired.clear()
+    this.failed.clear()
   }
 }

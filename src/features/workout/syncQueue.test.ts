@@ -90,4 +90,16 @@ describe('SyncQueue', () => {
     expect(save).toHaveBeenCalledTimes(2)
     expect(q.hasUnsaved()).toBe(false)
   })
+
+  it('dispose drops queued work and ignores later edits', async () => {
+    const save = vi.fn(async () => {})
+    const { q } = setup(save)
+    q.upsert('a', { reps: 8 })
+    q.dispose()
+    q.upsert('b', { reps: 5 }, true)
+    await vi.advanceTimersByTimeAsync(1000)
+    await q.flushAll()
+    expect(save).not.toHaveBeenCalled()
+    expect(q.hasUnsaved()).toBe(false)
+  })
 })

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
-import { useNavigate } from 'react-router'
 import { IconButton } from './Button'
 import { cn } from './cn'
+import { useGoBack } from './useGoBack'
 
 /** Top-level screen title (tab roots). */
 export function PageTitle({ title, subtitle, action }: { title: string; subtitle?: ReactNode; action?: ReactNode }) {
@@ -16,12 +16,15 @@ export function PageTitle({ title, subtitle, action }: { title: string; subtitle
   )
 }
 
-/** Header for pushed screens with a back button. */
-export function SubHeader({ title, back, action, className }: { title: string; back?: string; action?: ReactNode; className?: string }) {
-  const navigate = useNavigate()
+/**
+ * Header for pushed screens with a back button. Goes back in history when
+ * there is any, otherwise to `back` (the parent screen), defaulting to `/`.
+ */
+export function SubHeader({ title, back = '/', action, className }: { title: string; back?: string; action?: ReactNode; className?: string }) {
+  const goBack = useGoBack(back)
   return (
     <header className={cn('sticky top-0 z-20 -mx-4 mb-3 flex h-14 items-center gap-1 bg-bg/85 px-2 pt-safe backdrop-blur-xl', className)}>
-      <IconButton icon="chevronLeft" label="Tillbaka" onClick={() => (back ? navigate(back) : navigate(-1))} />
+      <IconButton icon="chevronLeft" label="Tillbaka" onClick={goBack} />
       <h1 className="min-w-0 flex-1 truncate text-[17px] font-semibold">{title}</h1>
       {action}
     </header>

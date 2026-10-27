@@ -38,6 +38,8 @@ export function useWorkoutSession(initial: ActiveWorkout) {
   const commit = useCallback((next: ActiveWorkout) => {
     workoutRef.current = next
     setWorkoutState(next)
+    // Keep the cached workout current so re-entry and the shell pill never show stale sets.
+    queryClient.setQueryData(keys.activeWorkout, next)
   }, [])
 
   const mapExercises = useCallback((fn: (e: PerformedExercise) => PerformedExercise) => {
@@ -64,7 +66,9 @@ export function useWorkoutSession(initial: ActiveWorkout) {
     },
   }), [])
 
-  useEffect(() => () => queue.dispose(), [queue])
+  // Leaving the screen must not drop debounced edits: send them now. The
+  // requests complete even after unmount.
+  useEffect(() => () => { void queue.flushAll() }, [queue])
 
   // Retry automatically when the connection returns; warn before closing with unsaved work.
   useEffect(() => {
@@ -125,6 +129,13 @@ export function useWorkoutSession(initial: ActiveWorkout) {
       const before = ex.sets.find((x) => x.id === s.id)
       if (!before || before.position !== s.position) queue.upsert(s.id, toRow(s), true)
     }
+  }, [mapExercises, queue])
+
+  /** Put back a set removed with removeSet (undo). Same id, so saving is idempotent. */
+  const restoreSet = useCallback((exerciseId: string, set: PerformedSet) => {
+    mapExercises((e) => e.id !== exerciseId || e.sets.some((s) => s.id === set.id) ? e
+      : { ...e, sets: [...e.sets, set].sort((a, b) => a.position - b.position) })
+    queue.upsert(set.id, toRow(set), true)
   }, [mapExercises, queue])
 
   const removeSet = useCallback((exerciseId: string, setId: string) => {
@@ -208,8 +219,9 @@ export function useWorkoutSession(initial: ActiveWorkout) {
   const discard = useCallback(async (): Promise<boolean> => {
     setBusy(true)
     try {
-      queue.dispose()
       await discardWorkout(workout.id)
+      // Only after the delete succeeded: if it fails, edits must keep saving.
+      queue.dispose()
       return true
     } catch (e) {
       setError(toDataError(e).message)
@@ -232,7 +244,9 @@ export function useWorkoutSession(initial: ActiveWorkout) {
     error,
     clearError: () => setError(null),
     retry: () => queue.retryFailed(),
-    updateSet, toggleComplete, addSet, removeSet,
+    /** Send every pending edit now (e.g. before navigating away). */
+    flush: () => queue.flushAll(),
+    updateSet, toggleComplete, addSet, removeSet, restoreSet,
     addExercise, removeExercise, swapExercise,
     finish, discard,
   }

@@ -47,13 +47,18 @@ export function ChartTooltip({ x, width, title, rows }: {
   )
 }
 
-/** Screen-reader table view of the chart data. */
+/**
+ * Screen-reader table view of the chart data. Wrapped in a div because a
+ * table ignores the 1px width of .sr-only and would widen the mobile viewport.
+ */
 export function ChartTable({ caption, columns, rows }: { caption: string; columns: readonly string[]; rows: readonly (readonly string[])[] }) {
   return (
-    <table className="sr-only">
+    <div className="sr-only">
+    <table>
       <caption>{caption}</caption>
       <thead><tr>{columns.map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
       <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => (j === 0 ? <th key={j} scope="row">{c}</th> : <td key={j}>{c}</td>))}</tr>)}</tbody>
     </table>
+    </div>
   )
 }

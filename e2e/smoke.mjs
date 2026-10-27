@@ -38,7 +38,7 @@ const failures = []
 const check = (cond, msg) => { if (!cond) failures.push(msg); return cond }
 
 async function newPage(browser, device, state, { signedIn = true } = {}) {
-  const context = await browser.newContext({ ...device, serviceWorkers: 'block' })
+  const context = await browser.newContext({ ...device, locale: 'sv-SE', timezoneId: 'Europe/Stockholm', serviceWorkers: 'block' })
   await context.route(`${MOCK}/**`, createHandler(state))
   if (signedIn) {
     await context.addInitScript((session) => {
@@ -58,8 +58,11 @@ async function shot(page, name) {
 }
 
 async function noHorizontalScroll(page, label) {
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
-  check(overflow <= 1, `${label}: horizontal overflow ${overflow}px`)
+  // Mobile browsers widen the layout viewport instead of scrolling, so compare
+  // against the device width, not window.innerWidth.
+  const device = page.viewportSize().width
+  const overflow = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, window.innerWidth))
+  check(overflow <= device + 1, `${label}: page is ${overflow}px wide on a ${device}px screen`)
 }
 
 const ROUTES = [
