@@ -46,7 +46,19 @@ Detaljer och checklista: [docs/SECURITY.md](docs/SECURITY.md).
 
 `npm run test:db` skapar en tom databas `training_test` via `DATABASE_ADMIN_URL` (standard `postgres://postgres:postgres@localhost:5432/postgres`), laddar en minimal Supabase-auth-shim och kör alla migrationer. Den rör aldrig ett riktigt Supabase-projekt.
 
-## Driftsättning (Vercel)
+## Driftsättning
+
+### GitHub Pages (används nu)
+Workflow `.github/workflows/pages.yml` bygger och publicerar vid varje push till `main`. Appen ligger på `https://ryngmarks.github.io/traningapp/`.
+
+Engångsinställningar i GitHub (repot måste vara publikt, eller kräva GitHub Pro):
+1. **Settings → Pages → Source:** *GitHub Actions*.
+2. **Settings → Secrets and variables → Actions → Variables:** `VITE_SUPABASE_URL` och `VITE_SUPABASE_ANON_KEY` (publishable/anon key, aldrig service role).
+3. Supabase **Auth → URL Configuration:** Site URL `https://ryngmarks.github.io/traningapp/`.
+
+Pages kan inte sätta egna HTTP-headers, så CSP och frame-skyddet i `vercel.json` gäller bara på Vercel. Datan skyddas av RLS oavsett värd.
+
+### Vercel (alternativ)
 
 1. Importera GitHub-repot i Vercel. Framework: Vite. Build: `npm run build`. Output: `dist`.
 2. Miljövariabler: `VITE_SUPABASE_URL` och `VITE_SUPABASE_ANON_KEY`, separata värden för *Production* och *Preview/Development* (gärna ett separat Supabase-projekt för utveckling).

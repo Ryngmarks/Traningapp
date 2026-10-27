@@ -29,7 +29,7 @@ export function LoginScreen() {
   return (
     <div className="flex min-h-dvh flex-col justify-center px-6 pt-safe pb-safe">
       <div className="mx-auto w-full max-w-sm animate-slide-up">
-        <img src="/icons/icon.svg" alt="" className="mb-8 size-14 rounded-2xl ring-1 ring-line" />
+        <img src={`${import.meta.env.BASE_URL}icons/icon.svg`} alt="" className="mb-8 size-14 rounded-2xl ring-1 ring-line" />
         <h1 className="font-display text-[34px] font-bold leading-tight tracking-[-0.03em]">Träning</h1>
         <p className="mt-2 text-[15px] text-muted">Logga in för att fortsätta.</p>
         <form onSubmit={onSubmit} className="mt-8 space-y-4" noValidate>

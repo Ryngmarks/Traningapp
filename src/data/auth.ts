@@ -33,7 +33,7 @@ export async function signOut(): Promise<void> {
 
 export async function sendPasswordReset(email: string): Promise<void> {
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: `${window.location.origin}/installningar`,
+    redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}installningar`,
   })
   if (error) throw toDataError(error)
 }

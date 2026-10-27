@@ -2,9 +2,10 @@
 // It caches only the static app shell. API calls to Supabase are never
 // cached or queued, so the app can never pretend unsaved data is stored.
 const CACHE = 'shell-v1'
+const BASE = new URL('./', self.registration.scope).pathname // '/' or '/<repo>/'
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/', '/manifest.webmanifest', '/icons/icon.svg'])))
+  event.waitUntil(caches.open(CACHE).then((c) => c.addAll([BASE, `${BASE}manifest.webmanifest`, `${BASE}icons/icon.svg`])))
   self.skipWaiting()
 })
 
@@ -22,11 +23,11 @@ self.addEventListener('fetch', (event) => {
 
   // Navigations: network first, fall back to the cached shell when offline.
   if (req.mode === 'navigate') {
-    event.respondWith(fetch(req).catch(() => caches.match('/')))
+    event.respondWith(fetch(req).catch(() => caches.match(BASE)))
     return
   }
   // Hashed build assets are immutable: cache first.
-  if (url.pathname.startsWith('/assets/')) {
+  if (url.pathname.startsWith(`${BASE}assets/`)) {
     event.respondWith(
       caches.match(req).then((hit) => hit || fetch(req).then((res) => {
         const copy = res.clone()

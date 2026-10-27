@@ -8,7 +8,10 @@ import { ToastProvider } from '@/ui/Toast'
 import { Spinner } from '@/ui/Spinner'
 import { routes } from './routes'
 
-const router = createBrowserRouter([...routes, { path: '*', element: <Navigate to="/" replace /> }])
+// BASE_URL is '/' on Vercel and '/<repo>/' on GitHub Pages.
+const router = createBrowserRouter([...routes, { path: '*', element: <Navigate to="/" replace /> }], {
+  basename: import.meta.env.BASE_URL.replace(/\/$/, '') || '/',
+})
 
 function AuthGate() {
   const session = useSession()
