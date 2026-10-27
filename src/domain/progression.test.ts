@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { estimatedOneRepMax, personalBests, sessionSummaries, suggestProgression, totalVolume } from './progression'
+import { estimatedOneRepMax, exerciseSnapshot, personalBests, sessionSummaries, suggestProgression, totalVolume } from './progression'
 import type { CompletedSet, SetValues } from './types'
 
 const w = (weight_kg: number | null, reps: number | null, kind: 'working' | 'warmup' = 'working'): SetValues =>
@@ -80,5 +80,35 @@ describe('volume and records', () => {
     expect(s.map((x) => [x.date, x.volume, x.topWeightKg])).toEqual([
       ['2026-01-01', 1440, 60], ['2026-01-08', 420, 70], ['2026-01-15', 650, 65],
     ])
+  })
+})
+
+describe('exerciseSnapshot', () => {
+  const set = (date: string, activityId: string, weight_kg: number | null, reps: number | null, kind: 'working' | 'warmup' = 'working'): CompletedSet =>
+    ({ kind, weight_kg, reps, duration_s: null, distance_m: null, date, activityId })
+
+  it('gives last session top weight, PB and the most used weight', () => {
+    const history = [
+      set('2026-09-01', 'a', 80, 10), set('2026-09-01', 'a', 80, 10), set('2026-09-01', 'a', 80, 9),
+      set('2026-09-08', 'b', 102, 3), set('2026-09-08', 'b', 85, 8),
+      set('2026-09-15', 'c', 120, 5, 'warmup'), set('2026-09-15', 'c', 81, 10), set('2026-09-15', 'c', 78, 12),
+    ]
+    expect(exerciseSnapshot(history, 'weight_reps')).toEqual({
+      unit: 'kg', last: 81, best: 102, bestReps: 3, common: 80, sessions: 3,
+    })
+  })
+
+  it('uses reps for bodyweight and distance for cardio', () => {
+    expect(exerciseSnapshot([set('2026-09-01', 'a', null, 8), set('2026-09-02', 'b', null, 6)], 'bodyweight_reps'))
+      .toMatchObject({ unit: 'reps', last: 6, best: 8, common: null })
+    const run = (date: string, id: string, distance_m: number): CompletedSet =>
+      ({ kind: 'working', weight_kg: null, reps: null, duration_s: 1800, distance_m, date, activityId: id })
+    expect(exerciseSnapshot([run('2026-09-01', 'a', 6000), run('2026-09-05', 'b', 5200)], 'cardio'))
+      .toMatchObject({ unit: 'metres', last: 5200, best: 6000 })
+  })
+
+  it('returns null without usable history', () => {
+    expect(exerciseSnapshot([], 'weight_reps')).toBeNull()
+    expect(exerciseSnapshot([set('2026-09-01', 'a', 40, 8, 'warmup')], 'weight_reps')).toBeNull()
   })
 })

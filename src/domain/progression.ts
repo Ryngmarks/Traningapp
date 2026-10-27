@@ -160,3 +160,75 @@ export function sessionSummaries(history: readonly CompletedSet[]): SessionSumma
   }
   return [...map.values()].sort((a, b) => a.date.localeCompare(b.date))
 }
+
+// ---------------------------------------------------------------------------
+// At-a-glance numbers for an exercise during a workout
+// ---------------------------------------------------------------------------
+
+export interface ExerciseSnapshot {
+  /** What the numbers measure: kg, reps, seconds or metres. */
+  unit: 'kg' | 'reps' | 'seconds' | 'metres'
+  /** Best value in the most recent session. */
+  last: number
+  /** Personal best. */
+  best: number
+  /** Reps done at the personal-best weight (kg only). */
+  bestReps: number | null
+  /** The working weight used in the most sets (kg only). */
+  common: number | null
+  sessions: number
+}
+
+function metricOf(m: MeasurementType, history: readonly CompletedSet[]): { unit: ExerciseSnapshot['unit']; value: (s: SetValues) => number | null } {
+  switch (m) {
+    case 'weight_reps':
+      return { unit: 'kg', value: (s) => (s.weight_kg != null && s.weight_kg > 0 ? s.weight_kg : null) }
+    case 'bodyweight_reps':
+      return { unit: 'reps', value: (s) => s.reps }
+    case 'duration':
+      return { unit: 'seconds', value: (s) => s.duration_s }
+    case 'distance':
+      return { unit: 'metres', value: (s) => s.distance_m }
+    case 'cardio':
+      return history.some((s) => s.distance_m != null && s.distance_m > 0)
+        ? { unit: 'metres', value: (s) => s.distance_m }
+        : { unit: 'seconds', value: (s) => s.duration_s }
+  }
+}
+
+/**
+ * Last, best and most-used value for an exercise from its completed working
+ * sets (warm-ups ignored). Null when there is no usable history yet.
+ */
+export function exerciseSnapshot(history: readonly CompletedSet[], m: MeasurementType): ExerciseSnapshot | null {
+  const work = history.filter((s) => s.kind === 'working')
+  const { unit, value } = metricOf(m, work)
+  const valued = work.map((s) => ({ s, v: value(s) })).filter((x): x is { s: CompletedSet; v: number } => x.v != null && x.v > 0)
+  if (valued.length === 0) return null
+
+  // Most recent session: latest date, then the activity seen last on that date.
+  const latest = valued.reduce((a, b) => (b.s.date > a.s.date || (b.s.date === a.s.date && b.s.activityId !== a.s.activityId) ? b : a))
+  const last = Math.max(...valued.filter((x) => x.s.activityId === latest.s.activityId).map((x) => x.v))
+
+  let best = valued[0]!
+  for (const x of valued) {
+    if (x.v > best.v || (x.v === best.v && (x.s.reps ?? 0) > (best.s.reps ?? 0))) best = x
+  }
+
+  let common: number | null = null
+  if (unit === 'kg') {
+    const counts = new Map<number, number>()
+    for (const x of valued) counts.set(x.v, (counts.get(x.v) ?? 0) + 1)
+    let top = 0
+    for (const [kg, n] of counts) {
+      if (n > top || (n === top && kg > (common ?? 0))) { top = n; common = kg }
+    }
+  }
+
+  return {
+    unit, last, best: best.v,
+    bestReps: unit === 'kg' ? best.s.reps : null,
+    common,
+    sessions: new Set(valued.map((x) => x.s.activityId)).size,
+  }
+}

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { exerciseSnapshot } from '@/domain/progression'
 import { currentExerciseId } from '@/domain/workout'
 import { type Profile, useProfile } from '@/data/profile'
+import { useExerciseHistories } from '@/data/strength'
 import { type ActiveWorkout, useActiveWorkout, useLastPerformances } from '@/data/workout'
 import { useStartWorkout } from '@/features/train/useStartWorkout'
 import { ExercisePicker } from '@/features/train/components/ExercisePicker'
@@ -122,6 +124,10 @@ function WorkoutSessionView({ initial, onEnding }: { initial: ActiveWorkout; onE
     [exercises],
   )
   const { data: lastById } = useLastPerformances(exerciseIds)
+  const { data: histories } = useExerciseHistories(exerciseIds)
+  const snapshots = useMemo(() => new Map(exercises.map((e) => [
+    e.id, e.exercise_id ? exerciseSnapshot(histories?.get(e.exercise_id) ?? [], e.measurement_type) : null,
+  ])), [exercises, histories])
   const today = todayLocal()
   const currentId = currentExerciseId(exercises)
 
@@ -210,6 +216,7 @@ function WorkoutSessionView({ initial, onEnding }: { initial: ActiveWorkout; onE
                 exercise={ex}
                 statuses={session.statuses}
                 last={ex.exercise_id ? lastById?.get(ex.exercise_id) : undefined}
+                snapshot={snapshots.get(ex.id)}
                 weightStep={weightStep}
                 today={today}
                 isCurrent={ex.id === currentId}

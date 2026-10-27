@@ -18,28 +18,48 @@ interface Row {
   performed_exercise: { exercise_id: string | null; activity: { id: string; local_date: string; status: string } }
 }
 
+const HISTORY_SELECT =
+  'position, kind, weight_kg, reps, duration_s, distance_m, speed_kmh, incline_pct, calories, ' +
+  'performed_exercise:performed_exercises!inner(exercise_id, activity:activities!inner(id, local_date, status))'
+
+/** Completed sets of the given exercises, oldest first, grouped by exercise id. */
+async function fetchHistories(exerciseIds: readonly string[]): Promise<Map<string, CompletedSet[]>> {
+  const rows = unwrap(await supabase.from('performed_sets')
+    .select(HISTORY_SELECT)
+    .in('performed_exercise.exercise_id', [...exerciseIds])
+    .eq('performed_exercise.activity.status', 'completed')
+    .not('completed_at', 'is', null)
+    .order('position')) as unknown as Row[]
+  const byExercise = new Map<string, CompletedSet[]>(exerciseIds.map((id) => [id, []]))
+  for (const r of rows) {
+    byExercise.get(r.performed_exercise.exercise_id!)?.push({
+      kind: r.kind, weight_kg: r.weight_kg, reps: r.reps, duration_s: r.duration_s, distance_m: r.distance_m,
+      speed_kmh: r.speed_kmh, incline_pct: r.incline_pct, calories: r.calories,
+      date: r.performed_exercise.activity.local_date,
+      activityId: r.performed_exercise.activity.id,
+    })
+  }
+  // Stable sort keeps set order (by position) within each session.
+  for (const list of byExercise.values()) list.sort((a, b) => a.date.localeCompare(b.date))
+  return byExercise
+}
+
 /** Every completed set ever logged for an exercise, oldest first. */
 export function useExerciseHistory(exerciseId: string | undefined) {
   return useQuery({
     queryKey: keys.exerciseHistory(exerciseId ?? ''),
     enabled: Boolean(exerciseId),
-    queryFn: async (): Promise<CompletedSet[]> => {
-      const rows = unwrap(await supabase.from('performed_sets')
-        .select('position, kind, weight_kg, reps, duration_s, distance_m, speed_kmh, incline_pct, calories, performed_exercise:performed_exercises!inner(exercise_id, activity:activities!inner(id, local_date, status))')
-        .eq('performed_exercise.exercise_id', exerciseId!)
-        .eq('performed_exercise.activity.status', 'completed')
-        .not('completed_at', 'is', null)
-        .order('position')) as unknown as Row[]
-      return rows
-        .map((r) => ({
-          kind: r.kind, weight_kg: r.weight_kg, reps: r.reps, duration_s: r.duration_s, distance_m: r.distance_m,
-          speed_kmh: r.speed_kmh, incline_pct: r.incline_pct, calories: r.calories,
-          date: r.performed_exercise.activity.local_date,
-          activityId: r.performed_exercise.activity.id,
-        }))
-        // Stable sort keeps set order (by position) within each session.
-        .sort((a, b) => a.date.localeCompare(b.date))
-    },
+    queryFn: async () => (await fetchHistories([exerciseId!])).get(exerciseId!) ?? [],
+  })
+}
+
+/** History for several exercises in one request (the active workout's PB/Senast/Oftast box). */
+export function useExerciseHistories(exerciseIds: readonly string[]) {
+  return useQuery({
+    queryKey: ['exercise-history', 'many', [...exerciseIds].sort().join(',')],
+    enabled: exerciseIds.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: () => fetchHistories(exerciseIds),
   })
 }
 

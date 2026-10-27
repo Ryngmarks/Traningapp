@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { suggestProgression } from '@/domain/progression'
+import { type ExerciseSnapshot, suggestProgression } from '@/domain/progression'
 import type { SetKind } from '@/domain/types'
 import type { LastPerformanceRow, PerformedExercise, PerformedSet } from '@/data/workout'
 import { IconButton } from '@/ui/Button'
@@ -9,12 +9,15 @@ import type { SyncStatus } from '../syncQueue'
 import type { SetPatch } from '../useWorkoutSession'
 import { setFields } from './setFields'
 import { SetRow, setGridClass } from './SetRow'
+import { SnapshotBox } from './SnapshotBox'
 import { lastText, planText, suggestionText } from './workoutText'
 
 export interface ExerciseCardProps {
   exercise: PerformedExercise
   statuses: Record<string, SyncStatus>
   last: LastPerformanceRow | undefined
+  /** PB / last / most used, from completed history. */
+  snapshot?: ExerciseSnapshot | null
   weightStep: number
   today: string
   isCurrent: boolean
@@ -26,7 +29,7 @@ export interface ExerciseCardProps {
 }
 
 export function ExerciseCard({
-  exercise: ex, statuses, last, weightStep, today, isCurrent,
+  exercise: ex, statuses, last, snapshot, weightStep, today, isCurrent,
   onUpdateSet, onToggleSet, onAddSet, onRemoveSet, onMore,
 }: ExerciseCardProps) {
   const m = ex.measurement_type
@@ -77,6 +80,7 @@ export function ExerciseCard({
           </h2>
           <p className="tabular mt-0.5 text-[13px] text-muted">{planText(ex)}</p>
         </div>
+        {snapshot && <SnapshotBox snapshot={snapshot} />}
         <IconButton icon="more" label={`Fler val för ${ex.exercise_name}`} onClick={onMore} className="-mr-1 -mt-1" />
       </header>
 

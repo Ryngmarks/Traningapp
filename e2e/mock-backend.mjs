@@ -301,11 +301,12 @@ function table(state, name, method, url, body, single) {
       rows.sort((x, y) => y.started_at.localeCompare(x.started_at))
     }
     if (name === 'performed_sets' && select.includes('performed_exercise')) {
-      const exId = url.searchParams.get('performed_exercise.exercise_id')?.replace('eq.', '')
+      const raw = url.searchParams.get('performed_exercise.exercise_id') ?? ''
+      const exIds = raw.startsWith('in.(') ? raw.slice(4, -1).split(',').map((x) => x.replace(/"/g, '')) : [raw.replace('eq.', '')]
       rows = rows.filter((s) => s.completed_at).map((s) => {
         const pe = state.performedExercises.find((p) => p.id === s.performed_exercise_id)
         const a = pe && state.activities.find((x) => x.id === pe.activity_id)
-        return pe && a && pe.exercise_id === exId && a.status === 'completed'
+        return pe && a && exIds.includes(pe.exercise_id) && a.status === 'completed'
           ? { ...s, performed_exercise: { exercise_id: pe.exercise_id, activity: { id: a.id, local_date: a.local_date, status: a.status } } } : null
       }).filter(Boolean)
     }
