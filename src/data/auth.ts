@@ -16,6 +16,11 @@ export function useSession(): Session | null | undefined {
   return session
 }
 
+/** The signed-in user's id (screens behind the auth gate always have one). */
+export function useUserId(): string | undefined {
+  return useSession()?.user.id
+}
+
 export async function signInWithPassword(email: string, password: string): Promise<void> {
   const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
   if (error) {

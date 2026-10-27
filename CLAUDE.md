@@ -21,7 +21,7 @@ Run `npm run check` and `npm run test:db` before every commit that touches code 
 | DB | `supabase/migrations/` | Versioned SQL. Never edit an applied migration; add a new one. |
 
 ## Hard rules
-- **Security first** (docs/SECURITY.md): every table in `public` has RLS and owner-only policies; `anon` has no access; new tables need grants for `authenticated` only and must be added to `supabase/tests/rls.test.ts` (the test fails if a table is missing). Use `(select auth.uid())` in policies. Child tables use composite FKs `(parent_id, user_id)`. Client-callable functions are `security invoker`; `security definer` only for triggers, with `set search_path = ''`, and revoke execute from API roles.
+- **Security first** (docs/SECURITY.md): every table in `public` has RLS; writes are owner-only, reads are owner-only except the member-shared tables listed in docs/SECURITY.md → Delning (templates, custom exercises, member names) — never widen sharing without the owner's decision; `anon` has no access; new tables need grants for `authenticated` only and must be added to `supabase/tests/rls.test.ts` (the test fails if a table is missing). Use `(select auth.uid())` in policies. Child tables use composite FKs `(parent_id, user_id)`. Client-callable functions are `security invoker`; `security definer` only for triggers, with `set search_path = ''`, and revoke execute from API roles.
 - Never put the service role key or any secret in the frontend, `VITE_` variables or the repo. Assume the repo is public.
 - No public sign-up. No public storage buckets for health data.
 - History is immutable by design: performed exercises snapshot the exercise name/category; activities snapshot the template name. Never make history depend on library or template rows.

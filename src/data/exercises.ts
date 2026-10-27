@@ -18,7 +18,11 @@ export function useExercises() {
   })
 }
 
+/** Created by a member (not part of the global library). */
 export const isCustomExercise = (e: Pick<Exercise, 'owner_id'>) => e.owner_id !== null
+/** Created by the signed-in user: only these can be edited or archived. */
+export const isOwnExercise = (e: Pick<Exercise, 'owner_id'>, userId: string | undefined) =>
+  e.owner_id !== null && e.owner_id === userId
 
 export function useSaveExercise() {
   return useMutation({

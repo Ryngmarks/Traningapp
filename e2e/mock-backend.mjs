@@ -7,11 +7,13 @@ import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
 export const USER_ID = '7d1c2c2e-3a5f-4c1e-9b7a-0f2d6c1a9e11'
+export const FRIEND_ID = '2b0c9f1e-6a77-4d0f-8e1b-5c4d3a2b1f00'
 
 const DAY = 86_400_000
 
 function seedExercises(root) {
-  const sql = readFileSync(`${root}/supabase/migrations/20261027000300_exercise_library.sql`, 'utf8')
+  const sql = ['20261027000300_exercise_library.sql', '20261027000700_general_gym_library.sql']
+    .map((f) => readFileSync(`${root}/supabase/migrations/${f}`, 'utf8')).join('\n')
   const re = /\('([a-z0-9_]+)', '([^']+)', '([a-z_]+)', '([a-z_]+)',\s*\n\s*'\{([^}]*)\}', '\{([^}]*)\}', '\{([^}]*)\}',\s*\n\s*'([^']*)'\)/g
   const out = []
   for (const m of sql.matchAll(re)) {
@@ -42,12 +44,15 @@ export function createState(root, { now = Date.now(), empty = false } = {}) {
     sets: [],
     totals: [],
     imports: [],
+    members: [{ user_id: USER_ID, display_name: 'Johan' }, { user_id: FRIEND_ID, display_name: 'Anna' }],
   }
+  // A friend's custom exercise (shared with all members).
+  exercises.push({ ...exercises.find((e) => e.slug === 'cable_fly'), id: randomUUID(), owner_id: FRIEND_ID, slug: null, name: 'Annas landmine press', category: 'shoulders' })
 
-  const tpl = (name, notes, sort, items) => {
-    const t = { id: randomUUID(), user_id: USER_ID, name, notes, sort_order: sort, archived_at: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }
+  const tpl = (name, notes, sort, items, owner = USER_ID) => {
+    const t = { id: randomUUID(), user_id: owner, name, notes, sort_order: sort, archived_at: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' }
     t.items = items.map(([slug, warm, sets, min, max, dur, rest], i) => ({
-      id: randomUUID(), template_id: t.id, user_id: USER_ID, exercise_id: bySlug[slug].id, position: i,
+      id: randomUUID(), template_id: t.id, user_id: owner, exercise_id: bySlug[slug].id, position: i,
       warmup_sets: warm, planned_sets: sets, rep_min: min, rep_max: max, target_duration_s: dur, target_distance_m: null,
       rest_seconds: rest, notes: null, created_at: t.created_at, updated_at: t.created_at,
     }))
@@ -62,7 +67,21 @@ export function createState(root, { now = Date.now(), empty = false } = {}) {
     ['broad_jump', 0, 3, 3, 5, null, 90], ['trap_bar_deadlift', 2, 3, 4, 6, null, 150], ['nordic_hamstring_curl', 0, 3, 4, 6, null, 120],
     ['hip_thrust', 1, 3, 8, 12, null, 90], ['bench_press', 1, 3, 6, 10, null, 120], ['pull_up', 0, 3, 6, 10, null, 120], ['side_plank', 0, 2, null, null, 40, 45],
   ])
-  if (empty) return state
+  tpl('Helkropp A', 'Allsidigt helkroppspass.', 100, [
+    ['back_squat', 2, 3, 6, 10, null, 120], ['bench_press', 1, 3, 6, 10, null, 120], ['barbell_row', 0, 3, 8, 12, null, 90],
+    ['overhead_press', 0, 3, 8, 12, null, 90], ['romanian_deadlift', 0, 3, 8, 12, null, 90], ['plank', 0, 3, null, null, 40, 45],
+  ], null)
+  tpl('Överkropp', 'Bröst, rygg, axlar och armar.', 102, [
+    ['bench_press', 1, 4, 6, 10, null, 120], ['seated_cable_row', 0, 3, 8, 12, null, 90], ['db_shoulder_press', 0, 3, 8, 12, null, 90],
+    ['pull_up', 0, 3, 6, 10, null, 90], ['db_biceps_curl', 0, 3, 10, 15, null, 60], ['triceps_pushdown', 0, 3, 10, 15, null, 60],
+  ], null)
+  tpl('Annas axelpass', 'Axlar och armar.', 0, [
+    ['db_shoulder_press', 0, 3, 8, 12, null, 90], ['lateral_raise', 0, 3, 12, 15, null, 60], ['face_pull', 0, 3, 12, 15, null, 60],
+  ], FRIEND_ID)
+  if (empty) {
+    state.templates = state.templates.filter((t) => t.user_id !== USER_ID)
+    return state
+  }
 
   // ~10 weeks of plausible history.
   const addActivity = (type, startedAt, extra = {}, metrics = null) => {
@@ -186,8 +205,9 @@ const rpc = {
       return { status: 409, body: { code: '23505', message: 'active_workout_exists', details: null, hint: null } }
     }
     const t = p_template_id ? state.templates.find((x) => x.id === p_template_id) : null
+    const ownTemplate = t && t.user_id === USER_ID
     const now = new Date().toISOString()
-    const act = { id: randomUUID(), user_id: USER_ID, type: 'gym', status: 'in_progress', title: t?.name ?? null, started_at: now, ended_at: null, timezone: 'Europe/Stockholm', local_date: localDate(now), duration_s: null, perceived_exertion: null, notes: null, template_id: t?.id ?? null, template_name: t?.name ?? null, source: 'manual', external_id: null, import_id: null, created_at: now, updated_at: now }
+    const act = { id: randomUUID(), user_id: USER_ID, type: 'gym', status: 'in_progress', title: t?.name ?? null, started_at: now, ended_at: null, timezone: 'Europe/Stockholm', local_date: localDate(now), duration_s: null, perceived_exertion: null, notes: null, template_id: ownTemplate ? t.id : null, template_name: t?.name ?? null, source: 'manual', external_id: null, import_id: null, created_at: now, updated_at: now }
     state.activities.push(act)
     for (const item of t?.items ?? []) addPerformedExercise(state, act.id, item.exercise_id, item.position, item)
     return { body: act.id }
@@ -208,6 +228,7 @@ const rpc = {
   },
   save_template(state, { p_template_id, p_name, p_notes, p_items }) {
     let t = p_template_id ? state.templates.find((x) => x.id === p_template_id) : null
+    if (t && t.user_id !== USER_ID) return { status: 404, body: { code: 'P0002', message: 'template not found' } }
     if (!t) {
       t = { id: randomUUID(), user_id: USER_ID, sort_order: state.templates.length, archived_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), items: [] }
       state.templates.push(t)
@@ -264,6 +285,7 @@ function table(state, name, method, url, body, single) {
     performed_sets: () => state.sets,
     performed_exercises: () => state.performedExercises,
     activities: () => state.activities,
+    members: () => state.members,
   }
 
   if (method === 'GET') {

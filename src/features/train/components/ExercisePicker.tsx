@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { CATEGORY_LABEL, MEASUREMENT_LABEL } from '@/domain/format'
-import { type Exercise, isCustomExercise, useExercises } from '@/data/exercises'
+import { useUserId } from '@/data/auth'
+import { type Exercise, isCustomExercise, isOwnExercise, useExercises } from '@/data/exercises'
+import { useMembers } from '@/data/members'
 import { Button } from '@/ui/Button'
 import { cn } from '@/ui/cn'
 import { Icon } from '@/ui/Icon'
@@ -32,6 +34,8 @@ export function ExercisePicker({ open, onClose, onPick, title = 'Välj övning',
 }
 
 function PickerBody({ onPick, pickedIds }: { onPick: (e: Exercise) => void; pickedIds?: ReadonlySet<string> }) {
+  const userId = useUserId()
+  const members = useMembers()
   const { data, isPending, error, refetch } = useExercises()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<CategoryFilter>('all')
@@ -60,7 +64,7 @@ function PickerBody({ onPick, pickedIds }: { onPick: (e: Exercise) => void; pick
                         <span className="block truncate text-[15px] font-medium">{e.name}</span>
                         <span className="block truncate text-[12px] text-faint">
                           {category === 'all' ? CATEGORY_LABEL[e.category] : MEASUREMENT_LABEL[e.measurement_type]}
-                          {isCustomExercise(e) && ' · Egen'}
+                          {isOwnExercise(e, userId) ? ' · Egen' : isCustomExercise(e) ? ` · av ${members.data?.get(e.owner_id!) ?? 'medlem'}` : ''}
                         </span>
                       </span>
                       <span className={cn('grid size-8 shrink-0 place-items-center rounded-full',

@@ -52,6 +52,28 @@ export function useSaveTemplate() {
   })
 }
 
+/** Templates are shared with all members; only the creator can edit. */
+export const isOwnTemplate = (t: Pick<Template, 'user_id'>, userId: string | undefined) =>
+  t.user_id !== null && t.user_id === userId
+
+/** Copy a shared or global template into the user's own templates. Returns the new id. */
+export function useCopyTemplate() {
+  return useMutation({
+    mutationFn: async (t: Template) =>
+      unwrap(await supabase.rpc('save_template', {
+        p_template_id: null as unknown as string,
+        p_name: t.name,
+        p_notes: t.notes ?? '',
+        p_items: t.items.map((i) => ({
+          exercise_id: i.exercise_id, warmup_sets: i.warmup_sets, planned_sets: i.planned_sets,
+          rep_min: i.rep_min, rep_max: i.rep_max, target_duration_s: i.target_duration_s,
+          target_distance_m: i.target_distance_m, rest_seconds: i.rest_seconds, notes: i.notes,
+        })),
+      })),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.templates }),
+  })
+}
+
 export function useDeleteTemplate() {
   return useMutation({
     // Past workouts keep their snapshot; their template_id is set to null.

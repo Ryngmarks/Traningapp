@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { MEASUREMENT_LABEL } from '@/domain/format'
-import { type Exercise, isCustomExercise, useArchiveExercise, useExercises } from '@/data/exercises'
+import { useUserId } from '@/data/auth'
+import { type Exercise, isCustomExercise, isOwnExercise, useArchiveExercise, useExercises } from '@/data/exercises'
+import { useMembers } from '@/data/members'
 import { toDataError } from '@/data/errors'
 import { Button } from '@/ui/Button'
 import { SectionTitle } from '@/ui/Card'
@@ -61,7 +63,10 @@ export function ExerciseLibraryScreen() {
 function ExerciseRow({ exercise: e, open, onToggle, onEdit }: {
   exercise: Exercise; open: boolean; onToggle: () => void; onEdit: () => void
 }) {
+  const userId = useUserId()
+  const members = useMembers()
   const custom = isCustomExercise(e)
+  const own = isOwnExercise(e, userId)
   const panelId = `ex-${e.id}`
   return (
     <div>
@@ -70,7 +75,8 @@ function ExerciseRow({ exercise: e, open, onToggle, onEdit }: {
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
             <span className="truncate text-[15px] font-semibold">{e.name}</span>
-            {custom && <Pill tone="accent" className="h-5 px-2 text-[11px]">Egen</Pill>}
+            {own && <Pill tone="accent" className="h-5 px-2 text-[11px]">Egen</Pill>}
+            {custom && !own && <Pill className="h-5 px-2 text-[11px]">{`av ${members.data?.get(e.owner_id!) ?? 'medlem'}`}</Pill>}
           </span>
           <span className="block truncate text-[13px] text-faint">
             {MEASUREMENT_LABEL[e.measurement_type]}{e.equipment.length > 0 && ` · ${joinList(e.equipment)}`}
@@ -78,12 +84,12 @@ function ExerciseRow({ exercise: e, open, onToggle, onEdit }: {
         </span>
         <Icon name="chevronDown" size={18} className={cn('shrink-0 text-faint transition-transform duration-200', open && 'rotate-180')} />
       </button>
-      {open && <ExerciseDetails id={panelId} exercise={e} onEdit={onEdit} />}
+      {open && <ExerciseDetails id={panelId} exercise={e} own={own} onEdit={onEdit} />}
     </div>
   )
 }
 
-function ExerciseDetails({ id, exercise: e, onEdit }: { id: string; exercise: Exercise; onEdit: () => void }) {
+function ExerciseDetails({ id, exercise: e, own, onEdit }: { id: string; exercise: Exercise; own: boolean; onEdit: () => void }) {
   const archive = useArchiveExercise()
   const toast = useToast()
   const [confirm, setConfirm] = useState(false)
@@ -109,7 +115,7 @@ function ExerciseDetails({ id, exercise: e, onEdit }: { id: string; exercise: Ex
         {e.equipment.length > 0 && <Detail term="Utrustning" value={joinList(e.equipment)} />}
       </dl>
       {e.instructions && <p className="leading-relaxed text-muted">{e.instructions}</p>}
-      {isCustomExercise(e) && (
+      {own && (
         <div className="flex gap-2 pt-1">
           <Button size="sm" icon="edit" onClick={onEdit}>Redigera</Button>
           <Button size="sm" icon="archive" variant={confirm ? 'danger' : 'ghost'} loading={archive.isPending} onClick={onArchive}>

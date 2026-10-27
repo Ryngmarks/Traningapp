@@ -338,6 +338,22 @@ export type Database = {
         Relationships: [
         ]
       }
+      members: {
+        Row: {
+          user_id: string
+          display_name: string | null
+        }
+        Insert: {
+          user_id: string
+          display_name?: string | null
+        }
+        Update: {
+          user_id?: string
+          display_name?: string | null
+        }
+        Relationships: [
+        ]
+      }
       performed_exercises: {
         Row: {
           id: string
@@ -489,7 +505,7 @@ export type Database = {
         Row: {
           id: string
           template_id: string
-          user_id: string
+          user_id: string | null
           exercise_id: string
           position: number
           warmup_sets: number
@@ -506,7 +522,7 @@ export type Database = {
         Insert: {
           id?: string
           template_id: string
-          user_id?: string
+          user_id?: string | null
           exercise_id: string
           position: number
           warmup_sets?: number
@@ -523,7 +539,7 @@ export type Database = {
         Update: {
           id?: string
           template_id?: string
-          user_id?: string
+          user_id?: string | null
           exercise_id?: string
           position?: number
           warmup_sets?: number
@@ -557,7 +573,7 @@ export type Database = {
       workout_templates: {
         Row: {
           id: string
-          user_id: string
+          user_id: string | null
           name: string
           notes: string | null
           sort_order: number
@@ -567,7 +583,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          user_id?: string
+          user_id?: string | null
           name: string
           notes?: string | null
           sort_order?: number
@@ -577,7 +593,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          user_id?: string
+          user_id?: string | null
           name?: string
           notes?: string | null
           sort_order?: number
@@ -610,12 +626,6 @@ export type Database = {
       assert_valid_timezone: {
         Args: {
           p_tz: string
-        }
-        Returns: undefined
-      }
-      create_example_templates: {
-        Args: {
-          p_user_id: string
         }
         Returns: undefined
       }
@@ -690,6 +700,10 @@ export type Database = {
         | "mobility"
         | "upper_body"
         | "conditioning"
+        | "chest"
+        | "back"
+        | "shoulders"
+        | "arms"
       measurement_type:
         | "weight_reps"
         | "bodyweight_reps"

@@ -8,6 +8,10 @@ PostgreSQL via Supabase. Migrationer finns i `supabase/migrations/` och körs i 
 | `…000100_security.sql` | RLS, policies och grants |
 | `…000200_functions.sql` | RPC-funktioner och bootstrap av ny användare |
 | `…000300_exercise_library.sql` | Globalt övningsbibliotek (38 övningar) |
+| `…000400_backfill_existing_users.sql` | Profil för konton skapade före schemat |
+| `…000500_more_exercise_categories.sql` | Kategorierna bröst, rygg, axlar och armar |
+| `…000600_sharing.sql` | Delning av mallar och övningar mellan medlemmar, tabellen `members`, nya användare får inga egna exempelpass |
+| `…000700_general_gym_library.sql` | 27 allmänna gymövningar, omkategorisering och fyra globala startpass |
 
 TypeScript-typerna i `src/data/database.types.ts` genereras från migrationerna (`npm run db:types`), och CI kontrollerar att de är i synk.
 
@@ -22,6 +26,7 @@ TypeScript-typerna i `src/data/database.types.ts` genereras från migrationerna 
 | `activity_metrics` | Valfria mätvärden 1:1 (distans, steg under passet, snitt-/maxpuls) | `(activity_id, user_id)` → aktivitet |
 | `performed_exercises` | Utförd övning (ögonblicksbild av namn, kategori och mättyp) | `(activity_id, user_id)` → aktivitet |
 | `performed_sets` | Set: typ (uppvärmning/arbete), vikt, reps, tid, distans, `completed_at` | `(performed_exercise_id, user_id)` → övning |
+| `members` | Visningsnamn som alla medlemmar ser, synkat från `profiles` med trigger | `user_id` |
 | `historical_totals` | Totalsummor utan datum, t.ex. 110 gymbesök | uuid |
 | `imports` | Logg per import (rader, infogade, dubbletter, fel) | uuid, `unique(id, user_id)` |
 | `daily_metrics` | Dagliga steg och vilopuls per källa (förberedd) | `(user_id, date, source)` |
@@ -34,6 +39,8 @@ TypeScript-typerna i `src/data/database.types.ts` genereras från migrationerna 
 **Ögonblicksbilder för historik.** En utförd övning kopierar namn, kategori och mättyp från biblioteket, och aktiviteten kopierar mallens namn. Att byta namn på en övning, redigera en mall eller ta bort en mall ändrar aldrig gamla pass. `exercise_id` och `template_id` behålls som länkar för progression och sätts till `null` om källan tas bort.
 
 **Ägarskap via sammansatta främmande nycklar.** Varje barnrad har `user_id` och refererar `(parent_id, user_id)`. Databasen kan därför inte koppla en rad till en förälder som ägs av någon annan, oberoende av RLS. Referenser till övningar (som kan vara globala) kontrolleras i RLS-policyn.
+
+**Delade och globala mallar.** Mallar och egna övningar är läsbara för alla medlemmar (se [SECURITY.md](SECURITY.md)). Globala startpass har `user_id is null` och skapas av migrationer. En aktivitet länkas bara till en mall med samma ägare, men namnet sparas alltid som ögonblicksbild.
 
 **Globalt och eget övningsbibliotek i samma tabell.** Det håller främmande nycklar enkla (en `exercise_id`). Globala rader har `slug` och `owner_id is null`, ändras bara via migrationer och är skrivskyddade för användare enligt RLS. Egna övningar arkiveras (`archived_at`) i stället för att raderas.
 

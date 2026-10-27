@@ -76,13 +76,17 @@ export const ACTIVITY_LABEL: Record<ActivityType, string> = {
 }
 
 export const CATEGORY_LABEL: Record<ExerciseCategory, string> = {
-  legs: 'Benstyrka',
-  hamstrings: 'Baksida lår',
+  legs: 'Ben',
+  hamstrings: 'Baksida och säte',
+  chest: 'Bröst',
+  back: 'Rygg',
+  shoulders: 'Axlar',
+  arms: 'Armar',
   hip_groin: 'Höft och ljumske',
   core: 'Bål och stabilitet',
   explosive: 'Explosivitet',
   mobility: 'Rörlighet',
-  upper_body: 'Överkropp',
+  upper_body: 'Övrig överkropp',
   conditioning: 'Kondition',
 }
 

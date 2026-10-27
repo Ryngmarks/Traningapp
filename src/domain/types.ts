@@ -4,8 +4,11 @@
 export const ACTIVITY_TYPES = ['gym', 'football_training', 'football_match', 'walk', 'run', 'other'] as const
 export type ActivityType = (typeof ACTIVITY_TYPES)[number]
 
+// Display order. upper_body is kept for exercises created before the
+// chest/back/shoulders/arms split.
 export const EXERCISE_CATEGORIES = [
-  'legs', 'hamstrings', 'hip_groin', 'core', 'explosive', 'mobility', 'upper_body', 'conditioning',
+  'legs', 'hamstrings', 'chest', 'back', 'shoulders', 'arms', 'core', 'hip_groin',
+  'explosive', 'mobility', 'conditioning', 'upper_body',
 ] as const
 export type ExerciseCategory = (typeof EXERCISE_CATEGORIES)[number]
 

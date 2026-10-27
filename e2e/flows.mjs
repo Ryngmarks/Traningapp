@@ -85,5 +85,26 @@ export async function run({ browser, devices, BASE, root, newPage, shot, check, 
     check(new URL(fresh.url()).pathname === parent, `back from ${path} goes to ${parent} (got ${new URL(fresh.url()).pathname})`)
     await fresh.close()
   }
+
+  // Sharing: friends' and starter templates are listed under Träningstips,
+  // read-only, and can be copied into your own templates.
+  await page.goto(`${BASE}/traning`)
+  check(await page.getByText('Träningstips').isVisible(), 'shared templates section is shown')
+  check(await page.getByText(/av Anna/).first().isVisible(), 'shared template shows its author')
+  check(await page.getByRole('link', { name: 'Redigera Annas axelpass' }).count() === 0, "friend's template has no edit button")
+  await shot(page, 'flow-8-train-shared')
+  await page.getByText('Annas axelpass').click()
+  await page.getByRole('button', { name: 'Kopiera' }).click()
+  await page.waitForURL(/\/traning\/mallar\/(?!ny)/)
+  await page.waitForTimeout(400)
+  check(await page.getByText('Redigera mall').isVisible(), 'a copied template opens in the editor')
+  check(state.templates.filter((t) => t.name === 'Annas axelpass' && t.user_id !== null).length === 2, 'copy is stored as own template')
+
+  // Invite link: the new member chooses name and password.
+  const invite = await context.newPage()
+  await invite.goto(`${BASE}/#type=invite`)
+  check(await invite.getByText('Välkommen!').isVisible({ timeout: 5000 }).catch(() => false), 'invite link asks for name and password')
+  await shot(invite, 'flow-9-invite')
+  await invite.close()
   await context.close()
 }
