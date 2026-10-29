@@ -125,6 +125,19 @@ export async function run({ browser, devices, BASE, root, newPage, shot, check, 
   check(state.sets.filter((x) => x.performed_exercise_id === cardioSet?.performed_exercise_id).length === 1, 'a cardio exercise starts with one set')
   await shot(page, 'flow-10-treadmill')
 
+  // Create a new exercise from the search: category and measurement come from the name.
+  await page.getByRole('button', { name: /Lägg till övning/ }).last().click()
+  await page.getByRole('dialog').getByRole('searchbox').or(page.getByRole('dialog').getByRole('textbox')).first().fill('Hackbenböj')
+  await page.getByRole('button', { name: /Skapa ”Hackbenböj”/ }).click()
+  const form = page.getByRole('dialog', { name: 'Ny övning' })
+  check(await form.getByLabel('Kategori').inputValue() === 'legs', 'new exercise is suggested into Ben from its name')
+  await shot(page, 'flow-13-create-exercise')
+  await form.getByRole('button', { name: 'Skapa övning' }).click()
+  await page.locator('[aria-label="Hackbenböj"]').first().waitFor({ timeout: 5000 }).catch(() => {})
+  const created = state.exercises.find((x) => x.name === 'Hackbenböj')
+  check(created?.category === 'legs' && created?.measurement_type === 'weight_reps', `created exercise stored as Ben, vikt × reps (got ${created?.category}/${created?.measurement_type})`)
+  check(await page.locator('[aria-label="Hackbenböj"]').count() > 0, 'created exercise is added to the workout')
+
   // Forgotten workout: the finish sheet suggests ending after the last set.
   await page.getByRole('button', { name: 'Avsluta pass' }).click()
   await page.getByRole('dialog').getByRole('button', { name: /^Avsluta$/ }).click()

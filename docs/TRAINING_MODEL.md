@@ -9,6 +9,12 @@
 | Aktivitet | Ett träningstillfälle av valfri typ. Ett gympass är en aktivitet med utförda övningar och set. |
 | Set | `warmup` eller `working`. Räknas som utfört när `completed_at` är satt. |
 
+## Egna övningar
+- Skapas i *Övningsbibliotek → Ny övning*, eller direkt från sökningen när man lägger till en övning i ett pass eller en mall (*Skapa "namn"*). Då läggs övningen till direkt.
+- **Kategori och mättyp föreslås utifrån namnet** (`src/domain/exerciseGuess.ts`), till exempel *Hackbenböj → Ben, vikt × reps*, *Latsdrag smalt grepp → Rygg*, *Planka på boll → Bål, tid* och *Löpband backe → Kondition, tid/km/km/h*. Förslaget följer namnet tills man själv väljer. Okända namn hamnar i Ben, vikt × reps, och kan ändras.
+- Muskler, utrustning och instruktion är valfria och ligger under *Fler detaljer*.
+- Egna övningar delas med alla medlemmar (se SECURITY.md).
+
 ## Gympass
 - **Starta:** från mall (övningar och plan kopieras) eller som fritt pass. Planerade set förifylls från senaste genomförda pass med samma övning: set *n* får värdena från set *n* förra gången. Utan historik får arbetsset repsintervallets nedre gräns och tom vikt.
 - **Klicka av:** ett tryck sparar setet som utfört med de förifyllda värdena. Ett nytt tryck ångrar.
