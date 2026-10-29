@@ -6,6 +6,7 @@ import { useMembers } from '@/data/members'
 import { Button } from '@/ui/Button'
 import { cn } from '@/ui/cn'
 import { Icon } from '@/ui/Icon'
+import { ExerciseFormSheet } from './ExerciseFormSheet'
 import { Sheet } from '@/ui/Sheet'
 import { EmptyState, ErrorState, ListSkeleton } from '@/ui/States'
 import { type CategoryFilter, groupExercises } from '../exerciseList'
@@ -40,6 +41,19 @@ function PickerBody({ onPick, pickedIds }: { onPick: (e: Exercise) => void; pick
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<CategoryFilter>('all')
   const groups = useMemo(() => groupExercises(data ?? [], query, category), [data, query, category])
+  const [creating, setCreating] = useState(false)
+  const q = query.trim()
+  const canCreate = q.length >= 2 && !(data ?? []).some((e) => e.name.toLowerCase() === q.toLowerCase())
+  const createButton = canCreate && (
+    <button type="button" onClick={() => setCreating(true)}
+      className="mt-2 flex min-h-14 w-full items-center gap-3 rounded-2xl border border-dashed border-accent/40 bg-accent-soft/40 px-4 py-2.5 text-left transition-colors active:bg-accent-soft">
+      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent text-on-accent"><Icon name="plus" size={18} /></span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[15px] font-semibold">Skapa ”{q}”</span>
+        <span className="block truncate text-[12px] text-muted">Ny egen övning, läggs till direkt</span>
+      </span>
+    </button>
+  )
 
   return (
     <div>
@@ -49,8 +63,13 @@ function PickerBody({ onPick, pickedIds }: { onPick: (e: Exercise) => void; pick
       </div>
       {isPending ? <ListSkeleton rows={6} />
         : error ? <ErrorState error={error} onRetry={() => void refetch()} />
-        : groups.length === 0 ? <EmptyState icon="search" title="Inga träffar" text="Prova ett annat sökord eller en annan kategori." />
-        : groups.map((g) => (
+        : groups.length === 0 ? (
+          <>
+            {createButton}
+            <EmptyState icon="search" title="Inga träffar" text={canCreate ? 'Skapa övningen ovan, eller prova ett annat sökord.' : 'Prova ett annat sökord eller en annan kategori.'} />
+          </>
+        )
+        : <>{createButton}{groups.map((g) => (
           <section key={g.category} className="mt-3 first:mt-1">
             {category === 'all' && <h3 className="px-1 pb-1.5 pt-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-faint">{g.label}</h3>}
             <ul className="divide-y divide-line/60 overflow-hidden rounded-2xl border border-line/70 bg-sunken/40">
@@ -77,7 +96,8 @@ function PickerBody({ onPick, pickedIds }: { onPick: (e: Exercise) => void; pick
               })}
             </ul>
           </section>
-        ))}
+        ))}</>}
+      <ExerciseFormSheet open={creating} initialName={q} onClose={() => setCreating(false)} onCreated={onPick} />
     </div>
   )
 }

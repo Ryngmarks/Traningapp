@@ -26,7 +26,7 @@ export const isOwnExercise = (e: Pick<Exercise, 'owner_id'>, userId: string | un
 
 export function useSaveExercise() {
   return useMutation({
-    mutationFn: async ({ id, input, ownerId }: { id?: string; input: ExerciseInput; ownerId: string }) => {
+    mutationFn: async ({ id, input, ownerId }: { id?: string; input: ExerciseInput; ownerId: string }): Promise<Exercise> => {
       if (id) {
         return unwrap(await supabase.from('exercises').update(input).eq('id', id).select('*').single())
       }
